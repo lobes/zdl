@@ -64,20 +64,33 @@ pub const Renderer = struct {
     }
 
     /// Draw a line between two points
-    pub fn drawLine(self: Renderer, x1: f32, y1: f32, x2: f32, y2: f32) void {
-        _ = c.SDL_RenderLine(self.handle, x1, y1, x2, y2);
+    pub fn drawLine(self: Renderer, x1: f32, y1: f32, x2: f32, y2: f32) !void {
+        if (!c.SDL_RenderLine(self.handle, x1, y1, x2, y2)) {
+            return error.DrawLineFailed;
+        }
     }
 
     /// Draw a filled rectangle
-    pub fn fillRect(self: Renderer, x: f32, y: f32, w: f32, h: f32) void {
+    pub fn fillRect(self: Renderer, x: f32, y: f32, w: f32, h: f32) !void {
         const fill_rect = c.SDL_FRect{ .x = x, .y = y, .w = w, .h = h };
-        _ = c.SDL_RenderFillRect(self.handle, &fill_rect);
+        if (!c.SDL_RenderFillRect(self.handle, &fill_rect)) {
+            return error.FillRectFailed;
+        }
     }
 
     /// Draw a rectangle outline
-    pub fn drawRect(self: Renderer, x: f32, y: f32, w: f32, h: f32) void {
+    pub fn drawRect(self: Renderer, x: f32, y: f32, w: f32, h: f32) !void {
         const draw_rect = c.SDL_FRect{ .x = x, .y = y, .w = w, .h = h };
-        _ = c.SDL_RenderRect(self.handle, &draw_rect);
+        if (!c.SDL_RenderRect(self.handle, &draw_rect)) {
+            return error.DrawRectFailed;
+        }
+    }
+
+    /// Draw debug text at the given position
+    pub fn renderText(self: Renderer, x: f32, y: f32, text: []const u8) !void {
+        if (!c.SDL_RenderDebugText(self.handle, x, y, text.ptr)) {
+            return error.RenderTextFailed;
+        }
     }
 };
 

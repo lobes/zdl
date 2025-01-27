@@ -1,5 +1,6 @@
 const c = @cImport({
     @cInclude("SDL3/SDL.h");
+    @cInclude("SDL3_ttf/SDL_ttf.h");
 });
 
 const std = @import("std");
@@ -23,13 +24,13 @@ pub const SDLError = error{
     InitializationFailed,
     WindowCreationFailed,
     RendererCreationFailed,
-    TextureCreationFailed,
     SurfaceCreationFailed,
-    SurfaceLockFailed,
-    SurfaceSaveFailed,
-    SurfaceOperationFailed,
-    AudioDeviceError,
+    TextureCreationFailed,
+    TextureQueryFailed,
     PixelFormatError,
+    TTFInitializationFailed,
+    FontLoadFailed,
+    TextRenderFailed,
 };
 
 test "error handling" {

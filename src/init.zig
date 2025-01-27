@@ -1,22 +1,30 @@
 const c = @cImport({
-    @cInclude("SDL.h");
+    @cInclude("SDL3/SDL.h");
 });
 
 const std = @import("std");
 const errors = @import("errors.zig");
 
 pub const InitFlags = struct {
-    video: bool = false,
     audio: bool = false,
-    events: bool = true,
+    video: bool = false,
+    joystick: bool = false,
+    haptic: bool = false,
     gamepad: bool = false,
+    events: bool = true,
+    sensor: bool = false,
+    camera: bool = false,
 
-    pub fn toSDLFlags(self: InitFlags) c.SDL_InitFlags {
-        var flags: c.SDL_InitFlags = 0;
-        if (self.video) flags |= c.SDL_INIT_VIDEO;
+    pub fn toSDLFlags(self: InitFlags) u32 {
+        var flags: u32 = 0;
         if (self.audio) flags |= c.SDL_INIT_AUDIO;
-        if (self.events) flags |= c.SDL_INIT_EVENTS;
+        if (self.video) flags |= c.SDL_INIT_VIDEO;
+        if (self.joystick) flags |= c.SDL_INIT_JOYSTICK;
+        if (self.haptic) flags |= c.SDL_INIT_HAPTIC;
         if (self.gamepad) flags |= c.SDL_INIT_GAMEPAD;
+        if (self.events) flags |= c.SDL_INIT_EVENTS;
+        if (self.sensor) flags |= c.SDL_INIT_SENSOR;
+        if (self.camera) flags |= c.SDL_INIT_CAMERA;
         return flags;
     }
 };
@@ -28,7 +36,7 @@ pub fn init(flags: InitFlags) !void {
     }
 }
 
-/// Shut down SDL and all initialized subsystems
+/// Quit SDL and all initialized subsystems
 pub fn quit() void {
     c.SDL_Quit();
 }
