@@ -1,0 +1,116 @@
+# SDL3 Migration Rules
+
+## Function Return Values
+- SDL3 functions that previously returned negative error codes now return bool
+- Success is now indicated by `true`, failure by `false`
+- This only applies to camel case functions (SDL_[A-Z]*), not lowercase functions
+
+## Headers and Includes
+- SDL headers should be included as `#include <SDL3/SDL.h>`
+- SDL_main.h must only be included in one source file
+- SDL.h no longer includes SDL_main.h automatically
+
+## Initialization
+- SDL_Init() returns bool in SDL3, not int
+- Must explicitly call SDL_Init(SDL_INIT_VIDEO) for graphics
+- SDL_CreateWindowAndRenderer() is preferred for 2D games
+
+## Window and Renderer
+- SDL_CreateWindow() still returns pointer, use `orelse` for error handling
+- Window position can use SDL_WINDOWPOS_CENTERED
+- Use SDL_WINDOW_RESIZABLE instead of SDL_WINDOW_SHOWN for modern window behavior
+- SDL_CreateWindowAndRenderer() is a convenient way to create both at once
+- Renderer coordinates use floating point in SDL3
+
+## Texture Management (Sprites)
+- Use SDL_Surface for loading images (CPU memory)
+- Convert surfaces to SDL_Texture for GPU rendering
+- SDL_CreateTextureFromSurface() for static textures
+- SDL_DestroyTexture() to clean up
+- Texture coordinates are normalized (0.0 to 1.0)
+- Use SDL_RenderTexture() for drawing sprites (replaces SDL_RenderCopy)
+- SDL_FRect for floating-point destination rectangles
+
+## Geometry and Collision
+- SDL_RenderGeometry() for custom shapes
+- SDL_Vertex structure for vertices with:
+  - position (x, y as float)
+  - color (r, g, b, a as float)
+  - tex_coord (x, y as float)
+- Can use indices to share vertices between triangles
+- Rectangles use SDL_FRect (float) instead of SDL_Rect (int)
+
+## Input Handling
+- Event types use SDL_EVENT_ prefix
+- Key events: SDL_EVENT_KEY_DOWN, SDL_EVENT_KEY_UP
+- Mouse events: SDL_EVENT_MOUSE_MOTION, SDL_EVENT_MOUSE_BUTTON
+- Gamepad events: SDL_EVENT_GAMEPAD_AXIS, SDL_EVENT_GAMEPAD_BUTTON
+- Window events: SDL_EVENT_WINDOW_RESIZED, SDL_EVENT_QUIT
+
+## Game Loop Structure
+1. Traditional Loop:
+```c
+while (running) {
+    // Process events
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_EVENT_QUIT: running = false; break;
+            case SDL_EVENT_KEY_DOWN: /* handle input */ break;
+        }
+    }
+    
+    // Update game state
+    update_physics();
+    update_animations();
+    
+    // Render frame
+    SDL_RenderClear(renderer);
+    render_background();
+    render_sprites();
+    SDL_RenderPresent(renderer);
+}
+```
+
+2. Modern Callback Structure:
+```c
+SDL_AppResult SDL_AppInit() {
+    // Initialize game
+}
+
+SDL_AppResult SDL_AppEvent(SDL_Event *event) {
+    // Handle input
+}
+
+SDL_AppResult SDL_AppIterate() {
+    // Update and render frame
+}
+
+void SDL_AppQuit() {
+    // Cleanup
+}
+```
+
+## Performance Tips
+- Use SDL_CreateWindowAndRenderer() for optimal 2D setup
+- Batch similar draw calls together
+- Use texture atlases for sprites
+- Minimize texture switches
+- Use SDL_RenderGeometry() with indices for complex shapes
+- SDL_Delay() or SDL_GL_SetSwapInterval() for frame timing
+
+## Memory Management
+- SDL_free() for SDL-allocated memory
+- SDL_DestroyTexture() for textures
+- SDL_DestroySurface() for surfaces
+- Always use defer for cleanup in Zig
+
+## Error Handling Pattern
+Old SDL2 pattern:
+```c
+if (SDL_Function() < 0) { /* error */ }
+```
+
+New SDL3 pattern:
+```c
+if (!SDL_Function()) { /* error */ }
+```

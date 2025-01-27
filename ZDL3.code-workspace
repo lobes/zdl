@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../SDL"
+		},
+		{
+			"path": "../zoldat"
+		}
+	],
+	"settings": {}
+}
