@@ -17,6 +17,9 @@ pub const Window = struct {
         resizable: bool = false,
         minimized: bool = false,
         maximized: bool = false,
+        x: i32 = c.SDL_WINDOWPOS_UNDEFINED,
+        y: i32 = c.SDL_WINDOWPOS_UNDEFINED,
+        display_id: u32 = 0,
 
         pub fn toSDLFlags(self: CreateFlags) c.SDL_WindowFlags {
             var flags: c.SDL_WindowFlags = 0;
@@ -43,6 +46,28 @@ pub const Window = struct {
             height,
             flags.toSDLFlags(),
         ) orelse return errors.SDLError.WindowCreationFailed;
+
+        // Set position after creation
+        if (flags.x != c.SDL_WINDOWPOS_UNDEFINED or flags.y != c.SDL_WINDOWPOS_UNDEFINED) {
+            _ = c.SDL_SetWindowPosition(@ptrCast(handle), flags.x, flags.y);
+        }
+
+        // Set fullscreen display mode if needed
+        if (flags.fullscreen) {
+            // Get the display the window is on
+            const display_id = c.SDL_GetDisplayForWindow(@ptrCast(handle));
+            std.debug.print("Window is on display {d}\n", .{display_id});
+
+            const mode = c.SDL_GetCurrentDisplayMode(display_id) orelse {
+                std.debug.print("Failed to get display mode: {s}\n", .{c.SDL_GetError()});
+                return errors.SDLError.WindowCreationFailed;
+            };
+            std.debug.print("Setting fullscreen mode: {}x{} @ {}Hz\n", .{ mode.*.w, mode.*.h, mode.*.refresh_rate });
+            if (!c.SDL_SetWindowFullscreenMode(@ptrCast(handle), mode)) {
+                std.debug.print("Failed to set fullscreen mode: {s}\n", .{c.SDL_GetError()});
+                return errors.SDLError.WindowCreationFailed;
+            }
+        }
 
         return Window{ .handle = handle };
     }
