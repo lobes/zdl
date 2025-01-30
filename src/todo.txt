@@ -44,17 +44,6 @@
 ✓ cpuinfo.zig - CPU feature detection
 
 # Graphics (/src/graphics)
-[ ] opengl.zig
-    - Context creation
-    - Extension loading
-    - Attribute control
-
-[ ] vulkan.zig
-    - Instance creation
-    - Surface management
-    - Device selection
-
-[ ] metal.zig
-    - View management
-    - Device setup
-    - Command handling
+✓ opengl.zig - OpenGL context management
+✓ vulkan.zig - Vulkan integration
+✓ metal.zig - Metal integration
