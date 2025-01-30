@@ -1,3 +1,45 @@
+//! High-resolution timing utilities for SDL3.
+//!
+//! This module provides timing and delay functionality:
+//! - High-resolution time queries
+//! - Millisecond and nanosecond precision
+//! - Frame rate control
+//! - Delay operations
+//! - Timer pause/resume support
+//!
+//! Dependencies:
+//! - Core SDL3 timer functionality
+//! - Uses init.zig for initialization
+//!
+//! Thread safety: Most timer operations are thread-safe.
+//! Each Timer instance should be used by a single thread,
+//! but different threads can safely use different timers.
+//!
+//! Performance notes:
+//! - getTicksNS() provides higher precision but may be slower
+//! - delay() yields CPU time to other processes
+//! - FrameTimer helps maintain consistent frame rates
+//!
+//! Example:
+//! ```zig
+//! // Basic delay
+//! delay(16); // Wait ~16ms
+//!
+//! // High precision timer
+//! var timer = Timer.init();
+//! timer.start();
+//! // Do work...
+//! const elapsed = timer.getTicks();
+//!
+//! // Frame rate control
+//! var frame_timer = FrameTimer.init(60);
+//! frame_timer.start();
+//! while (running) {
+//!     // Render frame...
+//!     frame_timer.update(); // Maintains ~60 FPS
+//! }
+//! ```
+
 const c = @cImport({
     @cInclude("SDL3/SDL.h");
 });

@@ -3,9 +3,11 @@ const c = @cImport({
 });
 
 const testing = @import("std").testing;
-const errors = @import("errors.zig");
-const pixel_mod = @import("pixels.zig");
-const rect = @import("rect.zig");
+const core = @import("../core/module.zig");
+const errors = core.errors;
+const video = @import("../video/module.zig");
+const pixel_mod = video.pixels;
+const rect = video.rect;
 
 pub const Surface = struct {
     handle: *c.SDL_Surface,
@@ -159,9 +161,8 @@ pub const Surface = struct {
 };
 
 test "surface operations" {
-    const init = @import("init.zig");
-    try init.init(.{ .video = true });
-    defer init.quit();
+    try core.init.init(.{ .video = true });
+    defer core.init.quit();
 
     // Create a surface
     var surface = try Surface.create(100, 100, c.SDL_PIXELFORMAT_RGBA32);

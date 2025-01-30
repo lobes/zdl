@@ -37,20 +37,20 @@ pub const Font = struct {
     /// Render text as a solid surface (quick and dirty)
     pub fn renderSolid(self: Font, text: []const u8, color: pixels.Color) !*c.SDL_Surface {
         const sdl_color = c.SDL_Color{ .r = color.r, .g = color.g, .b = color.b, .a = color.a };
-        return c.TTF_RenderText_Solid(self.handle, text.ptr, 0, sdl_color) orelse return errors.SDLError.TextRenderFailed;
+        return c.TTF_RenderText_Solid(self.handle, text.ptr, text.len, sdl_color) orelse return errors.SDLError.TextRenderFailed;
     }
 
     /// Render text as a shaded surface (slow but nice)
     pub fn renderShaded(self: Font, text: []const u8, fg: pixels.Color, bg: pixels.Color) !*c.SDL_Surface {
         const fg_color = c.SDL_Color{ .r = fg.r, .g = fg.g, .b = fg.b, .a = fg.a };
         const bg_color = c.SDL_Color{ .r = bg.r, .g = bg.g, .b = bg.b, .a = bg.a };
-        return c.TTF_RenderText_Shaded(self.handle, text.ptr, 0, fg_color, bg_color) orelse return errors.SDLError.TextRenderFailed;
+        return c.TTF_RenderText_Shaded(self.handle, text.ptr, text.len, fg_color, bg_color) orelse return errors.SDLError.TextRenderFailed;
     }
 
     /// Render text as a blended surface (slow but very nice)
     pub fn renderBlended(self: Font, text: []const u8, color: pixels.Color) !*c.SDL_Surface {
         const sdl_color = c.SDL_Color{ .r = color.r, .g = color.g, .b = color.b, .a = color.a };
-        return c.TTF_RenderText_Blended(self.handle, text.ptr, 0, sdl_color) orelse return errors.SDLError.TextRenderFailed;
+        return c.TTF_RenderText_Blended(self.handle, text.ptr, text.len, sdl_color) orelse return errors.SDLError.TextRenderFailed;
     }
 };
 

@@ -1,9 +1,43 @@
+//! SDL3 initialization and shutdown management.
+//!
+//! This module provides safe initialization and shutdown of SDL subsystems:
+//! - Subsystem initialization flags
+//! - Safe initialization with error handling
+//! - Automatic subsystem dependency management
+//! - Clean shutdown handling
+//!
+//! Dependencies:
+//! - Core SDL3 initialization
+//! - Uses error.zig for error handling
+//!
+//! Thread safety: SDL initialization should be done from the main thread.
+//! Once initialized, most subsystems are thread-safe for their specific
+//! operations.
+//!
+//! Platform notes:
+//! - Some subsystems may not be available on all platforms
+//! - Video subsystem behavior varies by platform
+//! - Audio subsystem requirements differ by platform
+//!
+//! Example:
+//! ```zig
+//! // Initialize SDL with video and audio
+//! try init(.{
+//!     .video = true,
+//!     .audio = true,
+//! });
+//! defer quit();
+//!
+//! // Use SDL functionality...
+//! ```
+
 const c = @cImport({
     @cInclude("SDL3/SDL.h");
 });
 
 const std = @import("std");
-const errors = @import("errors.zig");
+const core = @import("../core/module.zig");
+const errors = core.errors;
 
 pub const InitFlags = struct {
     audio: bool = false,

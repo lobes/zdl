@@ -4,7 +4,8 @@ const c = @cImport({
 
 const std = @import("std");
 const testing = std.testing;
-const errors = @import("errors.zig");
+const core = @import("../core/module.zig");
+const errors = core.errors;
 
 pub const Window = struct {
     handle: *c.SDL_Window,
@@ -110,9 +111,8 @@ pub const Window = struct {
 };
 
 test "window creation" {
-    const init = @import("init.zig");
-    try init.init(.{ .video = true });
-    defer init.quit();
+    try core.init.init(.{ .video = true });
+    defer core.init.quit();
 
     var window = try Window.create(
         "Test Window",

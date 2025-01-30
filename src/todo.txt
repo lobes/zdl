@@ -1,0 +1,216 @@
+# Core Systems
+[ ] audio.zig
+    - Audio device management
+    - Audio format conversion
+    - Mixing and effects
+    - Callback handling
+
+[ ] semaphore.zig
+    - Semaphore creation with initial value
+    - Wait and post operations
+    - Timed wait operations
+    - Resource counting
+
+# Input Systems
+[ ] haptic.zig
+    - Device enumeration
+    - Effect creation
+    - Force feedback control
+
+[ ] pen.zig
+    - Pen detection
+    - Pressure sensitivity
+    - Tilt handling
+
+[ ] sensor.zig
+    - Sensor enumeration
+    - Sensor type detection
+    - Event handling
+
+[ ] camera.zig
+    - Device enumeration
+    - Format handling
+    - Frame capture
+
+[ ] keyboard.zig
+    - Scancode mapping
+    - Key state tracking
+    - Text input handling
+
+[ ] mouse.zig
+    - Cursor management
+    - Button state tracking
+    - Motion handling
+
+[ ] touch.zig
+    - Touch device management
+    - Gesture recognition
+    - Multi-touch tracking
+
+[ ] joystick.zig
+    - Device enumeration
+    - Axis/button mapping
+    - Raw input handling
+
+# Window/Display Systems
+[ ] messagebox.zig
+    - Dialog creation
+    - Button configuration
+    - Modal handling
+
+[ ] clipboard.zig
+    - Text operations
+    - Data format handling
+    - Change monitoring
+
+[ ] dialog.zig
+    - File picker
+    - Filter handling
+    - Path management
+
+# System Integration
+[ ] process.zig
+    - Process creation
+    - IPC handling
+    - Exit code management
+
+[ ] storage.zig
+    - Data serialization
+    - Storage location management
+    - Versioning
+
+[ ] locale.zig
+    - Language detection
+    - Locale formatting
+    - Character encoding
+
+[ ] tray.zig
+    - Icon management
+    - Menu creation
+    - Event handling
+
+[ ] power.zig
+    - Battery monitoring
+    - Power state changes
+    - Screen dimming
+
+[ ] filesystem.zig
+    - Path handling
+    - File operations
+    - Directory management
+
+[ ] platform.zig
+    - OS detection
+    - Feature availability
+    - Platform quirks
+
+[ ] loadso.zig
+    - Library loading
+    - Symbol resolution
+    - Error handling
+
+[ ] cpuinfo.zig
+    - Feature detection
+    - Core counting
+    - Cache information
+
+# Graphics Extensions
+[ ] gl.zig
+    - Context management
+    - Extension loading
+    - Version handling
+
+[ ] vulkan.zig
+    - Surface creation
+    - Instance management
+    - Device selection
+
+[ ] metal.zig
+    - View creation
+    - Device management
+    - Command queue handling
+
+[ ] blendmode.zig
+    - Blend mode setup
+    - Custom blend operations
+    - Preset modes
+
+# Utility Systems
+[ ] hints.zig
+    - Hint setting/getting
+    - Priority levels
+    - Callbacks
+
+[ ] log.zig
+    - Log levels
+    - Output routing
+    - Category management
+
+[ ] endian.zig
+    - Swap operations
+    - Native detection
+    - Stream handling
+
+[ ] bits.zig
+    - Bit operations
+    - Mask handling
+    - Bit field access
+
+[ ] guid.zig
+    - GUID generation
+    - String conversion
+    - Comparison
+
+[ ] version.zig
+    - Version checking
+    - Feature availability
+    - Compatibility
+
+# Testing Infrastructure
+[ ] test/assert.zig
+    - Basic assertions
+    - Floating point comparisons
+    - Collection assertions
+
+[ ] test/harness.zig
+    - Test discovery
+    - Test execution
+    - Result reporting
+
+[ ] test/compare.zig
+    - Deep equality
+    - Approximate matching
+    - Custom comparators
+
+[ ] test/memory.zig
+    - Leak detection
+    - Usage tracking
+    - Pattern testing
+
+[ ] test/fuzzer.zig
+    - Input generation
+    - Case reduction
+    - Coverage tracking
+
+[ ] test/log.zig
+    - Log capture
+    - Output formatting
+    - Level filtering
+
+# Completed Modules
+✓ gpu.zig
+✓ gamepad.zig
+✓ async.zig
+✓ props.zig
+✓ init.zig
+✓ events.zig
+✓ timer.zig
+✓ thread.zig
+✓ atomic.zig
+✓ mutex.zig
+✓ video.zig
+✓ render.zig
+✓ surface.zig
+✓ pixels.zig
+✓ rect.zig
+✓ errors.zig

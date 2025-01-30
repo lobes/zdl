@@ -3,10 +3,11 @@ const c = @cImport({
 });
 
 const std = @import("std");
-const errors = @import("errors.zig");
-const video = @import("video.zig");
-const pixels = @import("pixels.zig");
-const rect = @import("rect.zig");
+const core = @import("../core/module.zig");
+const errors = core.errors;
+const video = @import("../video/module.zig");
+const pixels = video.pixels;
+const rect = video.rect;
 
 pub const Renderer = struct {
     handle: *c.SDL_Renderer,
@@ -95,9 +96,8 @@ pub const Renderer = struct {
 };
 
 test "basic rendering" {
-    const init = @import("init.zig");
-    try init.init(.{ .video = true });
-    defer init.quit();
+    try core.init.init(.{ .video = true });
+    defer core.init.quit();
 
     var window = try video.Window.create("Test", 800, 600, .{});
     defer window.destroy();

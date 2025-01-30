@@ -1,3 +1,45 @@
+//! Event handling and processing for SDL3.
+//!
+//! This module provides a type-safe wrapper around SDL's event system:
+//! - Event polling and waiting
+//! - Keyboard and mouse events
+//! - Window events
+//! - Text input events
+//! - Event filtering and processing
+//!
+//! Dependencies:
+//! - Core SDL3 event system
+//! - Requires SDL_INIT_EVENTS subsystem
+//!
+//! Thread safety: SDL's event queue is thread-safe for basic operations.
+//! Multiple threads can safely push events, but event polling should
+//! typically be done from a single thread.
+//!
+//! Platform notes:
+//! - Text input handling varies by platform and input method
+//! - Some key codes may be platform-specific
+//! - Touch events may not be available on all platforms
+//!
+//! Example:
+//! ```zig
+//! while (true) {
+//!     if (pollEvent()) |event| {
+//!         switch (event) {
+//!             .quit => break,
+//!             .key_down => |key| {
+//!                 if (key.keycode == .escape) break;
+//!             },
+//!             .window => |win| {
+//!                 if (win.event == .resized) {
+//!                     // Handle resize...
+//!                 }
+//!             },
+//!             else => {},
+//!         }
+//!     }
+//! }
+//! ```
+
 const c = @cImport({
     @cInclude("SDL3/SDL.h");
 });
@@ -12,6 +54,7 @@ pub const Event = union(enum) {
     mouse_button_down: MouseButtonEvent,
     mouse_button_up: MouseButtonEvent,
     window: WindowEvent,
+    text_input: TextInputEvent,
     unknown,
 
     pub fn from(sdl_event: c.SDL_Event) Event {
@@ -23,6 +66,7 @@ pub const Event = union(enum) {
             c.SDL_EVENT_MOUSE_BUTTON_DOWN => Event{ .mouse_button_down = MouseButtonEvent.from(sdl_event.button) },
             c.SDL_EVENT_MOUSE_BUTTON_UP => Event{ .mouse_button_up = MouseButtonEvent.from(sdl_event.button) },
             c.SDL_EVENT_WINDOW_RESIZED => Event{ .window = WindowEvent.from(sdl_event.window) },
+            c.SDL_EVENT_TEXT_INPUT => Event{ .text_input = TextInputEvent.from(sdl_event.text) },
             else => Event.unknown,
         };
     }
@@ -89,6 +133,24 @@ pub const WindowEvent = struct {
             .data1 = window.data1,
             .data2 = window.data2,
         };
+    }
+};
+
+pub const TextInputEvent = struct {
+    text: [32]u8,
+
+    pub fn from(text: c.SDL_TextInputEvent) TextInputEvent {
+        var result = TextInputEvent{
+            .text = undefined,
+        };
+        var i: usize = 0;
+        while (i < 32 and text.text[i] != 0) : (i += 1) {
+            result.text[i] = text.text[i];
+        }
+        if (i < 32) {
+            result.text[i] = 0;
+        }
+        return result;
     }
 };
 
@@ -196,11 +258,11 @@ pub fn pollEvent() ?Event {
 }
 
 test "event polling" {
-    const init = @import("init.zig");
-    try init.init(.{ .video = true });
-    defer init.quit();
+    const core = @import("../core/module.zig");
+    try core.init.init(.{ .video = true });
+    defer core.init.quit();
 
-    const video = @import("video.zig");
+    const video = @import("../video/module.zig");
     var window = try video.Window.create(
         "Test Window",
         800,
