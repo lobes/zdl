@@ -1,29 +1,74 @@
 //! Video and rendering functionality for SDL3.
 //!
-//! This module provides comprehensive support for:
-//! - Window management
-//! - 2D rendering
+//! This module provides graphics capabilities:
+//! - Window creation and management
+//! - Hardware-accelerated 2D rendering
+//! - Modern GPU features
 //! - Surface operations
 //! - Pixel format handling
-//! - Modern GPU features
-//! - Geometric primitives
+//! - Rectangle utilities
 //!
-//! The video module is essential for any application that needs to create windows
-//! or perform rendering operations.
+//! Window management:
+//! ```zig
+//! // Create a window
+//! const window = try video.createWindow(
+//!     "My Window",
+//!     .centered, .centered,
+//!     800, 600,
+//!     .{ .shown = true },
+//! );
+//! defer window.destroy();
+//! ```
+//!
+//! 2D rendering:
+//! ```zig
+//! // Create renderer
+//! const renderer = try video.createRenderer(window, null, .{
+//!     .accelerated = true,
+//!     .presentvsync = true,
+//! });
+//! defer renderer.destroy();
+//!
+//! // Draw something
+//! renderer.setDrawColor(255, 0, 0, 255);
+//! try renderer.clear();
+//! renderer.present();
+//! ```
+//!
+//! Surface operations:
+//! ```zig
+//! // Load and display an image
+//! const surface = try video.surface.loadBMP("image.bmp");
+//! defer surface.destroy();
+//!
+//! const texture = try renderer.createTextureFromSurface(surface);
+//! defer texture.destroy();
+//! ```
+//!
+//! GPU features:
+//! ```zig
+//! // Use modern GPU features
+//! const gpu = try video.gpu.init(window);
+//! defer gpu.quit();
+//!
+//! try gpu.setDrawColor(255, 0, 0, 255);
+//! try gpu.clear();
+//! gpu.present();
+//! ```
 
-pub const window = @import("window.zig");
+pub const gpu = @import("gpu.zig");
 pub const render = @import("render.zig");
 pub const surface = @import("surface.zig");
 pub const pixels = @import("pixels.zig");
 pub const rect = @import("rect.zig");
-pub const gpu = @import("gpu.zig");
+pub const window = @import("window.zig");
 
-comptime {
-    // Import and test all video modules
+test {
+    // Test all public modules
+    _ = gpu;
     _ = window;
     _ = render;
     _ = surface;
     _ = pixels;
     _ = rect;
-    _ = gpu;
 }

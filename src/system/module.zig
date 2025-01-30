@@ -1,29 +1,79 @@
-//! System integration functionality for SDL3.
+//! System integration for SDL3.
 //!
-//! This module will provide system-level features:
+//! This module provides system-level functionality:
+//! - Message boxes and dialogs
 //! - Clipboard operations
-//! - File dialogs
-//! - Message boxes
-//! - Process management
-//! - Storage operations
-//! - Localization
+//! - Platform detection
 //! - Power management
-//! - Platform-specific features
-//! - File system operations
+//! - File system access
 //! - Dynamic library loading
-//! - CPU information
+//! - CPU feature detection
 //!
-//! TODO: Implement system functionality
+//! Each feature has its own submodule:
+//!
+//! Message boxes:
+//! ```zig
+//! // Show simple message box
+//! try system.messagebox.show(.info, "Title", "Message", null);
+//! ```
+//!
+//! Clipboard:
+//! ```zig
+//! // Copy text to clipboard
+//! try system.clipboard.setText("Hello SDL3!");
+//! ```
+//!
+//! Platform info:
+//! ```zig
+//! // Get system info
+//! const platform = system.platform.getName();
+//! const ram = system.platform.getSystemRAM();
+//! ```
+//!
+//! Power management:
+//! ```zig
+//! // Get battery status
+//! var secs: i32 = undefined;
+//! var pct: i32 = undefined;
+//! const state = system.power.getInfo(&secs, &pct);
+//! ```
+//!
+//! File system:
+//! ```zig
+//! // Get application paths
+//! const base = try system.filesystem.getBasePath();
+//! const pref = try system.filesystem.getPrefPath("org", "app");
+//! ```
+//!
+//! Dynamic libraries:
+//! ```zig
+//! // Load shared library
+//! const lib = try system.loadso.SharedObject.load("lib.so");
+//! const sym = try lib.sym("function");
+//! ```
+//!
+//! CPU features:
+//! ```zig
+//! // Check CPU capabilities
+//! const cores = system.cpuinfo.getCPUCount();
+//! const has_avx = system.cpuinfo.hasAVX();
+//! ```
 
-// TODO: Implement system modules
-// pub const clipboard = @import("clipboard.zig");
-// pub const dialog = @import("dialog.zig");
-// pub const messagebox = @import("messagebox.zig");
-// pub const process = @import("process.zig");
-// pub const storage = @import("storage.zig");
-// pub const locale = @import("locale.zig");
-// pub const power = @import("power.zig");
-// pub const platform = @import("platform.zig");
-// pub const filesystem = @import("filesystem.zig");
-// pub const loadso = @import("loadso.zig");
-// pub const cpuinfo = @import("cpuinfo.zig");
+pub const messagebox = @import("messagebox.zig");
+pub const clipboard = @import("clipboard.zig");
+pub const platform = @import("platform.zig");
+pub const power = @import("power.zig");
+pub const filesystem = @import("filesystem.zig");
+pub const loadso = @import("loadso.zig");
+pub const cpuinfo = @import("cpuinfo.zig");
+
+test {
+    // Test all public modules
+    _ = messagebox;
+    _ = clipboard;
+    _ = platform;
+    _ = power;
+    _ = filesystem;
+    _ = loadso;
+    _ = cpuinfo;
+}

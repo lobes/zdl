@@ -230,13 +230,13 @@ test "log output function" {
             userdata: ?*anyopaque,
             category: Category,
             priority: Priority,
-            message: [*:0]const u8,
+            msg: [*:0]const u8,
         ) void {
             const self = @as(*@This(), @ptrCast(@alignCast(userdata.?)));
             if (self.last_message.len > 0) {
                 self.allocator.free(self.last_message);
             }
-            self.last_message = std.mem.span(message);
+            self.last_message = std.mem.span(msg);
             _ = category;
             _ = priority;
         }
@@ -246,7 +246,7 @@ test "log output function" {
     try setOutputFunction(Context.onLog, &ctx);
     defer if (ctx.last_message.len > 0) {
         ctx.allocator.free(ctx.last_message);
-    }
+    };
 
     // Test that our output function receives messages
     const test_message = "Test output function";
@@ -257,4 +257,4 @@ test "log output function" {
     const output = getOutputFunction();
     try std.testing.expectEqual(@as(OutputFn, Context.onLog), output.callback);
     try std.testing.expectEqual(@as(?*anyopaque, &ctx), output.userdata);
-} 
+}

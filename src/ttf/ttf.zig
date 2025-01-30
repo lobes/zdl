@@ -55,7 +55,7 @@ pub const Font = struct {
 };
 
 test "font loading and rendering" {
-    const init = @import("init.zig");
+    const init = @import("../core/module.zig");
     try init.init(.{ .video = true });
     defer init.quit();
 

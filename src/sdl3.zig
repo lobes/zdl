@@ -30,7 +30,8 @@ pub const input = @import("input/module.zig");
 pub const audio = @import("audio/module.zig");
 pub const system = @import("system/module.zig");
 pub const graphics = @import("graphics/module.zig");
-pub const util = @import("util/module.zig");
+pub const mixer = @import("mixer/module.zig");
+pub const ttf = @import("ttf/module.zig");
 
 test {
     // Test all public modules
@@ -40,5 +41,6 @@ test {
     _ = audio;
     _ = system;
     _ = graphics;
-    _ = util;
+    _ = mixer;
+    _ = ttf;
 }

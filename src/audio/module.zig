@@ -1,19 +1,50 @@
 //! Audio functionality for SDL3.
 //!
-//! This module will provide comprehensive audio support:
+//! This module provides audio capabilities:
 //! - Audio device management
+//! - Audio playback and capture
 //! - Format conversion
-//! - Audio callbacks
 //! - Stream handling
+//! - Device enumeration
 //!
-//! Dependencies:
-//! - Core SDL3 audio functionality
+//! Basic audio playback:
+//! ```zig
+//! // Open audio device
+//! var spec = audio.AudioSpec{
+//!     .freq = 44100,
+//!     .format = .f32_sys,
+//!     .channels = 2,
+//!     .samples = 4096,
+//!     .callback = audioCallback,
+//! };
+//! const device = try audio.openDevice(null, false, &spec, null);
+//! defer device.close();
 //!
-//! Thread safety: Audio callbacks can be called from any thread.
-//! Device management should be done from the main thread.
+//! // Start playback
+//! device.pause(false);
+//! ```
+//!
+//! Audio format conversion:
+//! ```zig
+//! // Convert between formats
+//! const dst = try audio.convert(.u16_sys, .u8, src_data);
+//! defer audio.free(dst);
+//! ```
+//!
+//! Device enumeration:
+//! ```zig
+//! // List audio devices
+//! const num_output = audio.getNumDevices(false);
+//! const num_input = audio.getNumDevices(true);
+//!
+//! if (audio.getDeviceName(0, false)) |name| {
+//!     // Found output device
+//! }
+//! ```
 
-const audio = @import("audio.zig");
+pub const audio = @import("audio.zig");
 
-comptime {
+test {
+    // Test all public modules
     _ = audio;
 }
