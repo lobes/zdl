@@ -75,10 +75,12 @@ pub fn quit() void {
     c.SDL_Quit();
 }
 
+const testing = @import("std").testing;
+
 test "initialization" {
     try init(.{ .video = true });
     defer quit();
 
     // Test that SDL is properly initialized
-    try std.testing.expect(c.SDL_WasInit(c.SDL_INIT_VIDEO) != 0);
+    try testing.expect(c.SDL_WasInit(c.SDL_INIT_VIDEO) != 0);
 }

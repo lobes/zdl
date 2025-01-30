@@ -24,6 +24,9 @@ pub const atomic = @import("atomic.zig");
 pub const mutex = @import("mutex.zig");
 pub const hints = @import("hints.zig");
 pub const semaphore = @import("semaphore.zig");
+pub const log = @import("log.zig");
+pub const endian = @import("endian.zig");
+pub const version = @import("version.zig");
 
 comptime {
     // Import and test all core modules
@@ -38,4 +41,7 @@ comptime {
     _ = mutex;
     _ = hints;
     _ = semaphore;
+    _ = log;
+    _ = endian;
+    _ = version;
 }
