@@ -36,36 +36,12 @@
 
 # System (/src/system)
 ✓ messagebox.zig - System dialogs and alerts
-
-[ ] clipboard.zig
-    - Text copying
-    - Data formats
-    - System clipboard
-
-[ ] platform.zig
-    - Platform detection
-    - System info
-    - Platform-specific features
-
-[ ] power.zig
-    - Battery status
-    - Power states
-    - Power management
-
-[ ] filesystem.zig
-    - Base paths
-    - Preferences
-    - File operations
-
-[ ] loadso.zig
-    - Dynamic library loading
-    - Symbol lookup
-    - Error handling
-
-[ ] cpuinfo.zig
-    - CPU feature detection
-    - Core counting
-    - CPU capabilities
+✓ clipboard.zig - System clipboard operations
+✓ platform.zig - Platform detection and info
+✓ power.zig - Power management and battery
+✓ filesystem.zig - File system operations
+✓ loadso.zig - Dynamic library loading
+✓ cpuinfo.zig - CPU feature detection
 
 # Graphics (/src/graphics)
 [ ] opengl.zig
