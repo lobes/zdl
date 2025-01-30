@@ -8,6 +8,7 @@
 //! - Properties system
 //! - Asynchronous I/O
 //! - Thread management and synchronization
+//! - Runtime configuration
 //!
 //! Most applications will need to use this module as it provides essential functionality.
 //! Other modules typically depend on the services provided here.
@@ -21,6 +22,8 @@ pub const async_io = @import("async.zig");
 pub const thread = @import("thread.zig");
 pub const atomic = @import("atomic.zig");
 pub const mutex = @import("mutex.zig");
+pub const hints = @import("hints.zig");
+pub const semaphore = @import("semaphore.zig");
 
 comptime {
     // Import and test all core modules
@@ -33,4 +36,6 @@ comptime {
     _ = thread;
     _ = atomic;
     _ = mutex;
+    _ = hints;
+    _ = semaphore;
 }
