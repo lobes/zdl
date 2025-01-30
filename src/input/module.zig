@@ -16,18 +16,20 @@
 
 // Currently implemented
 pub const gamepad = @import("gamepad.zig");
-
-// TODO: Implement remaining input modules
-// pub const keyboard = @import("keyboard.zig");
-// pub const mouse = @import("mouse.zig");
-// pub const touch = @import("touch.zig");
-// pub const pen = @import("pen.zig");
-// pub const haptic = @import("haptic.zig");
-// pub const sensor = @import("sensor.zig");
-// pub const joystick = @import("joystick.zig");
-// pub const camera = @import("camera.zig");
+pub const joystick = @import("joystick.zig");
+pub const keyboard = @import("keyboard.zig");
+pub const mouse = @import("mouse.zig");
+pub const touch = @import("touch.zig");
+pub const haptic = @import("haptic.zig");
+pub const sensor = @import("sensor.zig");
 
 comptime {
     // Import and test implemented modules
     _ = gamepad;
+    _ = joystick;
+    _ = keyboard;
+    _ = mouse;
+    _ = touch;
+    _ = haptic;
+    _ = sensor;
 }

@@ -29,39 +29,28 @@
 ✓ keyboard.zig - Key states and text input
 ✓ mouse.zig - Mouse input and cursors
 ✓ touch.zig - Touch and gesture input
-
-[ ] joystick.zig
-    - Device detection
-    - Button/axis reading
-    - Event handling
+✓ joystick.zig - Legacy joystick support
 
 # Audio (/src/audio)
-[ ] audio.zig
-    - Device management
-    - Audio callbacks
-    - Format conversion
-    - Stream handling
+✓ audio.zig - Audio playback and capture
 
 # System (/src/system)
-[ ] messagebox.zig
-    - Simple dialogs
-    - Button options
-    - Error display
+✓ messagebox.zig - System dialogs and alerts
 
 [ ] clipboard.zig
     - Text copying
     - Data formats
-    - System integration
+    - System clipboard
 
 [ ] platform.zig
     - Platform detection
     - System info
-    - Base path
+    - Platform-specific features
 
 [ ] power.zig
     - Battery status
     - Power states
-    - System info
+    - Power management
 
 [ ] filesystem.zig
     - Base paths
@@ -69,14 +58,14 @@
     - File operations
 
 [ ] loadso.zig
-    - Dynamic loading
+    - Dynamic library loading
     - Symbol lookup
     - Error handling
 
 [ ] cpuinfo.zig
-    - CPU detection
-    - Feature testing
-    - System info
+    - CPU feature detection
+    - Core counting
+    - CPU capabilities
 
 # Graphics (/src/graphics)
 [ ] opengl.zig

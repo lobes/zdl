@@ -3,12 +3,17 @@
 //! This module will provide comprehensive audio support:
 //! - Audio device management
 //! - Format conversion
-//! - Audio mixing
-//! - Effects processing
+//! - Audio callbacks
+//! - Stream handling
 //!
-//! TODO: Implement audio functionality
+//! Dependencies:
+//! - Core SDL3 audio functionality
+//!
+//! Thread safety: Audio callbacks can be called from any thread.
+//! Device management should be done from the main thread.
 
-// TODO: Implement audio modules
-// pub const device = @import("device.zig");
-// pub const format = @import("format.zig");
-// pub const mixing = @import("mixing.zig");
+const audio = @import("audio.zig");
+
+comptime {
+    _ = audio;
+}
