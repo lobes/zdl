@@ -12,11 +12,7 @@
 ✓ hints.zig - Runtime configuration
 ✓ log.zig - Logging system
 ✓ endian.zig - Byte order operations
-
-[ ] version.zig
-    - Version checking
-    - Feature availability
-    - Compatibility
+✓ version.zig - Version checking and compatibility
 
 # Video (/src/video)
 ✓ gpu.zig - Modern GPU features
@@ -28,31 +24,11 @@
 
 # Input (/src/input)
 ✓ gamepad.zig - Modern gamepad support
-
-[ ] haptic.zig
-    - Force feedback
-    - Effect playback
-    - Device management
-
-[ ] sensor.zig
-    - Sensor types
-    - Reading values
-    - Event handling
-
-[ ] keyboard.zig
-    - Key states
-    - Text input
-    - Key mapping
-
-[ ] mouse.zig
-    - Button states
-    - Cursor control
-    - Relative motion
-
-[ ] touch.zig
-    - Multi-touch
-    - Gesture events
-    - Finger tracking
+✓ haptic.zig - Force feedback and rumble
+✓ sensor.zig - Device sensors and motion
+✓ keyboard.zig - Key states and text input
+✓ mouse.zig - Mouse input and cursors
+✓ touch.zig - Touch and gesture input
 
 [ ] joystick.zig
     - Device detection
