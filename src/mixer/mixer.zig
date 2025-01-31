@@ -35,7 +35,7 @@ const std = @import("std");
 const core = @import("../core/module.zig");
 
 const c = @cImport({
-    @cInclude("/Users/lobes/things/SDL_mixer/include/SDL3_mixer/SDL_mixer.h");
+    @cInclude("SDL3_mixer/SDL_mixer.h");
 });
 
 pub const InitFlags = packed struct {

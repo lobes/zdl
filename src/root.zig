@@ -1,21 +1,22 @@
 const c = @cImport({
     @cInclude("SDL3/SDL.h");
+    @cInclude("SDL3_mixer/SDL_mixer.h");
     @cInclude("SDL3_ttf/SDL_ttf.h");
 });
 
 const std = @import("std");
 const testing = std.testing;
 
-pub const init = @import("init.zig");
-pub const video = @import("video.zig");
-pub const render = @import("render.zig");
-pub const events = @import("events.zig");
-pub const rect = @import("rect.zig");
-pub const pixels = @import("pixels.zig");
-pub const surface = @import("surface.zig");
-pub const timer = @import("timer.zig");
-pub const errors = @import("errors.zig");
-pub const ttf = @import("ttf.zig");
+pub const init = @import("core/init.zig");
+pub const video = @import("video/module.zig");
+pub const render = @import("video/render.zig");
+pub const events = @import("core/events.zig");
+pub const rect = @import("video/rect.zig");
+pub const pixels = @import("video/pixels.zig");
+pub const surface = @import("video/surface.zig");
+pub const timer = @import("core/timer.zig");
+pub const errors = @import("core/error.zig");
+pub const ttf = @import("ttf/ttf.zig");
 
 const MonitorInfo = struct {
     display_id: i32,

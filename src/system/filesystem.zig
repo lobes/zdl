@@ -56,7 +56,7 @@ test "filesystem basics" {
     try std.testing.expect(base.len > 0);
 
     // Get preferences path
-    const pref = try getPrefPath("ZDL3Test", "TestApp");
+    const pref = try getPrefPath("zdl-test", "test-app");
     defer freePath(pref);
     try std.testing.expect(pref.len > 0);
 }
