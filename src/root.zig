@@ -1,14 +1,15 @@
+const std = @import("std");
+const build_options = @import("build_options");
+
 pub const c = @cImport({
     @cInclude("SDL3/SDL.h");
-    if (@hasDecl(@This(), "enable_mixer")) {
+    if (build_options.enable_mixer) {
         @cInclude("SDL3_mixer/SDL_mixer.h");
     }
-    if (@hasDecl(@This(), "enable_ttf")) {
+    if (build_options.enable_ttf) {
         @cInclude("SDL3_ttf/SDL_ttf.h");
     }
 });
-
-const std = @import("std");
 
 /// SDL initialization flags
 pub const InitFlags = struct {
@@ -47,21 +48,27 @@ pub fn quit() void {
     c.SDL_Quit();
 }
 
-// Module exports
+// Core module (always enabled)
 pub const core = @import("core/module.zig");
-pub const audio = @import("audio/module.zig");
-pub const graphics = @import("graphics/module.zig");
-pub const input = @import("input/module.zig");
-pub const mixer = @import("mixer/mixer.zig");
-pub const system = @import("system/module.zig");
-pub const ttf = @import("ttf/ttf.zig");
-pub const video = @import("video/module.zig");
-pub const render = @import("video/render.zig");
-pub const surface = @import("video/surface.zig");
-pub const events = @import("core/events.zig");
-pub const timer = @import("core/timer.zig");
-pub const pixels = video.pixels;
-pub const rect = video.rect;
+
+// Optional modules based on build options
+pub const audio = if (build_options.enable_audio) @import("audio/module.zig") else struct {};
+pub const graphics = if (build_options.enable_graphics) @import("graphics/module.zig") else struct {};
+pub const input = if (build_options.enable_input) @import("input/module.zig") else struct {};
+pub const mixer = if (build_options.enable_mixer) @import("mixer/mixer.zig") else struct {};
+pub const system = if (build_options.enable_system) @import("system/module.zig") else struct {};
+pub const ttf = if (build_options.enable_ttf) @import("ttf/ttf.zig") else struct {};
+pub const video = if (build_options.enable_video) @import("video/module.zig") else struct {};
+
+// Video-related modules (depend on video being enabled)
+pub const render = if (build_options.enable_video) @import("video/render.zig") else struct {};
+pub const surface = if (build_options.enable_video) @import("video/surface.zig") else struct {};
+pub const pixels = if (build_options.enable_video) video.pixels else struct {};
+pub const rect = if (build_options.enable_video) video.rect else struct {};
+
+// Core events and timer are always available
+pub const events = core.events;
+pub const timer = core.timer;
 
 test {
     _ = @import("tests.zig");

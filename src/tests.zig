@@ -1,6 +1,7 @@
 const std = @import("std");
 const zdl = @import("root.zig");
 const c = zdl.c;
+const build_options = @import("build_options");
 
 test "simple test" {
     var list = std.ArrayList(i32).init(std.testing.allocator);
@@ -16,6 +17,8 @@ test {
 
 // Example of how to use the SDL3 wrapper
 test "basic usage" {
+    if (!build_options.enable_video) return error.SkipZigTest;
+
     try zdl.init(.{ .video = true });
     defer zdl.quit();
 
@@ -79,6 +82,8 @@ test "basic usage" {
 
 // Example of how to use surfaces and pixel manipulation
 test "surface manipulation" {
+    if (!build_options.enable_video) return error.SkipZigTest;
+
     try zdl.init(.{ .video = true });
     defer zdl.quit();
 
@@ -106,6 +111,8 @@ test "surface manipulation" {
 
 // Example of how to handle input events
 test "input handling" {
+    if (!build_options.enable_video or !build_options.enable_input) return error.SkipZigTest;
+
     try zdl.init(.{ .video = true });
     defer zdl.quit();
 

@@ -11,6 +11,54 @@ Modern Zig bindings for SDL3, with integrated SDL_ttf and SDL_mixer support.
 - Comprehensive documentation and examples
 - Full test coverage
 
+## Requirements
+
+This library requires SDL3 and its extensions to be installed on your system. We require the latest versions:
+
+- [SDL3](https://github.com/libsdl-org/SDL) (version 3.2.0 or later)
+- [SDL3_ttf](https://github.com/libsdl-org/SDL_ttf) (version 3.2.0 or later)
+- [SDL3_mixer](https://github.com/libsdl-org/SDL_mixer) (version 3.2.0 or later)
+
+### Installing SDL3
+
+#### macOS
+
+```bash
+brew install sdl3 sdl3_ttf sdl3_mixer
+```
+
+#### Linux
+
+Build from source:
+
+```bash
+# SDL3
+git clone https://github.com/libsdl-org/SDL.git
+cd SDL && mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make && sudo make install
+
+# SDL3_ttf
+git clone https://github.com/libsdl-org/SDL_ttf.git
+cd SDL_ttf && mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make && sudo make install
+
+# SDL3_mixer
+git clone https://github.com/libsdl-org/SDL_mixer.git
+cd SDL_mixer && mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make && sudo make install
+```
+
+#### Windows
+
+Download and install the development libraries from:
+
+- [SDL3](https://github.com/libsdl-org/SDL/releases)
+- [SDL3_ttf](https://github.com/libsdl-org/SDL_ttf/releases)
+- [SDL3_mixer](https://github.com/libsdl-org/SDL_mixer/releases)
+
 ## Installation
 
 Add to your `build.zig.zon`:
@@ -38,6 +86,20 @@ const zdl = b.dependency("zdl", .{
 });
 
 exe.addModule("zdl", zdl.module("zdl"));
+
+// Add SDL3 system libraries
+exe.addIncludePath(.{ .cwd_relative = "/usr/local/include" });
+exe.addLibraryPath(.{ .cwd_relative = "/usr/local/lib" });
+exe.linkSystemLibrary("SDL3");
+exe.linkSystemLibrary("SDL3_ttf");
+exe.linkSystemLibrary("SDL3_mixer");
+exe.linkLibC();
+```
+
+Note: If SDL3 is installed in a different location on your system, you can specify the paths when building:
+
+```bash
+zig build -Dsdl-include-path=/path/to/sdl/include -Dsdl-lib-path=/path/to/sdl/lib
 ```
 
 ## Usage
