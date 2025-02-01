@@ -129,8 +129,8 @@ test "color operations" {
 
 test "pixel format operations" {
     const core = @import("../core/module.zig");
-    try core.init.init(.{ .video = true });
-    defer core.init.quit();
+    try core.init(.{ .video = true });
+    defer core.quit();
 
     var format = try PixelFormat.init(c.SDL_PIXELFORMAT_RGBA32);
     defer format.deinit();

@@ -11,9 +11,8 @@
 //! Window management:
 //! ```zig
 //! // Create a window
-//! const window = try video.createWindow(
+//! const window = try Window.create(
 //!     "My Window",
-//!     .centered, .centered,
 //!     800, 600,
 //!     .{ .shown = true },
 //! );
@@ -23,22 +22,22 @@
 //! 2D rendering:
 //! ```zig
 //! // Create renderer
-//! const renderer = try video.createRenderer(window, null, .{
+//! const renderer = try Renderer.create(window, .{
 //!     .accelerated = true,
-//!     .presentvsync = true,
+//!     .vsync = true,
 //! });
 //! defer renderer.destroy();
 //!
 //! // Draw something
-//! renderer.setDrawColor(255, 0, 0, 255);
+//! try renderer.setColor(Colors.red);
 //! try renderer.clear();
-//! renderer.present();
+//! try renderer.present();
 //! ```
 //!
 //! Surface operations:
 //! ```zig
 //! // Load and display an image
-//! const surface = try video.surface.loadBMP("image.bmp");
+//! const surface = try Surface.loadBMP("image.bmp");
 //! defer surface.destroy();
 //!
 //! const texture = try renderer.createTextureFromSurface(surface);
@@ -56,16 +55,20 @@
 //! gpu.present();
 //! ```
 
-pub const gpu = @import("gpu.zig");
-pub const render = @import("render.zig");
-pub const surface = @import("surface.zig");
+const window = @import("window.zig");
+const render = @import("render.zig");
+const surface = @import("surface.zig");
 pub const pixels = @import("pixels.zig");
 pub const rect = @import("rect.zig");
-pub const window = @import("window.zig");
+
+pub const Window = window.Window;
+pub const Renderer = render.Renderer;
+pub const Surface = surface.Surface;
+pub const Colors = pixels.Colors;
+pub const Rect = rect.Rect;
 
 test {
     // Test all public modules
-    _ = gpu;
     _ = window;
     _ = render;
     _ = surface;

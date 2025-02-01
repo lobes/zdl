@@ -35,9 +35,6 @@ const c = @cImport({
     @cInclude("SDL3/SDL.h");
 });
 
-const core = @import("../core/module.zig");
-const errors = core.errors;
-
 /// Priority level for hints
 pub const HintPriority = enum(c.SDL_HintPriority) {
     default = c.SDL_HINT_DEFAULT,
@@ -46,34 +43,30 @@ pub const HintPriority = enum(c.SDL_HintPriority) {
 };
 
 /// Callback function type for hint changes
-pub const HintCallback = *const fn (
-    userdata: ?*anyopaque,
-    name: [*:0]const u8,
-    oldValue: [*:0]const u8,
-    newValue: [*:0]const u8,
-) void;
+pub const HintCallback = fn (?*anyopaque, [*c]const u8, [*c]const u8, [*c]const u8) callconv(.C) void;
 
-/// Set a hint with normal priority
-pub fn setHint(name: [*:0]const u8, value: [*:0]const u8) !void {
-    if (!c.SDL_SetHint(name, value)) {
-        return errors.sdlError();
+/// Set a hint with a specific priority
+pub fn setHint(name: [:0]const u8, value: [:0]const u8) !void {
+    if (!c.SDL_SetHint(name.ptr, value.ptr)) {
+        return error.SDLError;
     }
 }
 
 /// Set a hint with specified priority
 pub fn setHintWithPriority(
-    name: [*:0]const u8,
-    value: [*:0]const u8,
+    name: [:0]const u8,
+    value: [:0]const u8,
     priority: HintPriority,
 ) !void {
-    if (!c.SDL_SetHintWithPriority(name, value, @intFromEnum(priority))) {
-        return errors.sdlError();
+    if (!c.SDL_SetHintWithPriority(name.ptr, value.ptr, @intFromEnum(priority))) {
+        return error.SDLError;
     }
 }
 
 /// Get the value of a hint
-pub fn getHint(name: [*:0]const u8) ?[*:0]const u8 {
-    return c.SDL_GetHint(name);
+pub fn getHint(name: [:0]const u8) ?[:0]const u8 {
+    const value = c.SDL_GetHint(name.ptr) orelse return null;
+    return std.mem.span(value);
 }
 
 /// Reset all hints to their default values
@@ -82,34 +75,18 @@ pub fn resetHints() void {
 }
 
 /// Clear a specific hint
-pub fn clearHint(name: [*:0]const u8) void {
-    c.SDL_ClearHint(name);
+pub fn clearHint(name: [:0]const u8) void {
+    setHint(name, "") catch {};
 }
 
-/// Add a callback to be triggered when a hint changes
-pub fn addHintCallback(
-    name: [*:0]const u8,
-    callback: HintCallback,
-    userdata: ?*anyopaque,
-) void {
-    c.SDL_AddHintCallback(
-        name,
-        @ptrCast(callback),
-        userdata,
-    );
+/// Add a function to watch a particular hint
+pub fn addHintCallback(name: [:0]const u8, callback: HintCallback, data: ?*anyopaque) void {
+    _ = c.SDL_AddHintCallback(name.ptr, callback, data);
 }
 
-/// Remove a previously-added callback
-pub fn delHintCallback(
-    name: [*:0]const u8,
-    callback: HintCallback,
-    userdata: ?*anyopaque,
-) void {
-    c.SDL_DelHintCallback(
-        name,
-        @ptrCast(callback),
-        userdata,
-    );
+/// Remove a function watching a particular hint
+pub fn removeHintCallback(name: [:0]const u8, callback: HintCallback, data: ?*anyopaque) void {
+    c.SDL_RemoveHintCallback(name.ptr, callback, data);
 }
 
 const TestContext = struct {
@@ -117,47 +94,42 @@ const TestContext = struct {
 
     pub fn onHintChanged(
         userdata: ?*anyopaque,
-        _: [*:0]const u8,
-        _: [*:0]const u8,
-        _: [*:0]const u8,
-    ) void {
+        _: [*c]const u8,
+        _: [*c]const u8,
+        _: [*c]const u8,
+    ) callconv(.C) void {
         const self = @as(*TestContext, @ptrCast(@alignCast(userdata.?)));
         self.triggered.* = true;
     }
 };
 
 test "hint operations" {
+    const sdl = @import("module.zig");
+    try sdl.init(.{});
+    defer sdl.quit();
+
+    const test_hint = "SDL_TEST_HINT";
+    const test_value = "test_value";
+
     // Test setting and getting hints
-    try setHint("SDL_TEST_HINT", "test_value");
-    const value = getHint("SDL_TEST_HINT");
-    try std.testing.expect(value != null);
-    try std.testing.expectEqualStrings("test_value", std.mem.span(value.?));
+    try setHint(test_hint, test_value);
+    const value = getHint(test_hint) orelse "";
+    try std.testing.expectEqualStrings(test_value, value);
 
     // Test priority levels
-    try setHintWithPriority("SDL_TEST_HINT", "override_value", .override);
-    const override_value = getHint("SDL_TEST_HINT");
-    try std.testing.expect(override_value != null);
-    try std.testing.expectEqualStrings("override_value", std.mem.span(override_value.?));
+    try setHintWithPriority(test_hint, "override_value", .override);
+    const override_value = getHint(test_hint) orelse "";
+    try std.testing.expectEqualStrings("override_value", override_value);
 
     // Test hint callback
-    var callback_triggered = false;
-    var context = TestContext{ .triggered = &callback_triggered };
-    addHintCallback(
-        "SDL_TEST_HINT",
-        TestContext.onHintChanged,
-        &context,
-    );
+    var callback_called = false;
+    var context = TestContext{ .triggered = &callback_called };
+    addHintCallback(test_hint, TestContext.onHintChanged, &context);
+    try setHint(test_hint, "new_value");
+    try std.testing.expect(callback_called);
 
-    try setHint("SDL_TEST_HINT", "new_value");
-    try std.testing.expect(callback_triggered);
-
-    // Clean up
-    delHintCallback(
-        "SDL_TEST_HINT",
-        TestContext.onHintChanged,
-        &context,
-    );
-    clearHint("SDL_TEST_HINT");
+    removeHintCallback(test_hint, TestContext.onHintChanged, &context);
+    clearHint(test_hint);
 }
 
 test "hint reset" {
@@ -177,14 +149,12 @@ test "hint priorities" {
     // Test priority override behavior
     try setHintWithPriority("SDL_TEST_HINT", "normal", .normal);
     try setHintWithPriority("SDL_TEST_HINT", "default", .default);
-    const value1 = getHint("SDL_TEST_HINT");
-    try std.testing.expect(value1 != null);
-    try std.testing.expectEqualStrings("normal", std.mem.span(value1.?));
+    const value1 = getHint("SDL_TEST_HINT") orelse "";
+    try std.testing.expectEqualStrings("normal", value1);
 
     try setHintWithPriority("SDL_TEST_HINT", "override", .override);
-    const value2 = getHint("SDL_TEST_HINT");
-    try std.testing.expect(value2 != null);
-    try std.testing.expectEqualStrings("override", std.mem.span(value2.?));
+    const value2 = getHint("SDL_TEST_HINT") orelse "";
+    try std.testing.expectEqualStrings("override", value2);
 
     // Clean up
     clearHint("SDL_TEST_HINT");

@@ -2,16 +2,6 @@ const std = @import("std");
 const zdl = @import("root.zig");
 const c = zdl.c;
 
-const init = @import("core/init.zig");
-const video = @import("video/module.zig");
-const render = @import("video/render.zig");
-const events = @import("core/events.zig");
-const rect = @import("video/rect.zig");
-const pixels = @import("video/pixels.zig");
-const surface = @import("video/surface.zig");
-const timer = @import("core/timer.zig");
-const errors = @import("core/error.zig");
-
 test "simple test" {
     var list = std.ArrayList(i32).init(std.testing.allocator);
     defer list.deinit();
@@ -26,59 +16,63 @@ test {
 
 // Example of how to use the SDL3 wrapper
 test "basic usage" {
-    // Initialize SDL with video subsystem
     try zdl.init(.{ .video = true });
     defer zdl.quit();
 
-    // Create a window
     var window = try zdl.video.Window.create(
-        "SDL3 Example",
+        "Test Window",
         800,
         600,
-        .{ .shown = true, .resizable = true },
+        c.SDL_WINDOW_RESIZABLE,
     );
     defer window.destroy();
 
-    // Create a renderer
-    var renderer = try zdl.render.Renderer.create(window, .{
-        .accelerated = true,
-        .vsync = true,
-    });
+    // Test window operations
+    try window.setSize(1024, 768);
+    try window.setPosition(100, 100);
+    try window.setTitle("Updated Title");
+
+    // Create renderer
+    var renderer = try zdl.render.Renderer.create(window, .{});
     defer renderer.destroy();
 
-    // Create a frame timer for 60 FPS
+    // Set up frame timer
     var frame_timer = zdl.timer.FrameTimer.init(60);
     frame_timer.start();
 
+    // Create a surface
+    var surface1 = try zdl.surface.Surface.create(100, 100, c.SDL_PIXELFORMAT_RGBA32);
+    defer surface1.destroy();
+
+    // Fill surface with color
+    try surface1.fill(zdl.pixels.Colors.red);
+
     // Main loop
-    main_loop: while (true) {
-        // Handle events
+    var running = true;
+    var frame_count: u32 = 0;
+    while (running and frame_count < 10) : (frame_count += 1) {
+        // Process events
         while (zdl.events.pollEvent()) |event| {
             switch (event) {
-                .quit => break :main_loop,
-                .key_down => |key| {
-                    if (key.keycode == .escape) break :main_loop;
-                },
+                .quit => running = false,
                 else => {},
             }
         }
 
         // Clear screen
-        renderer.setColor(zdl.pixels.Colors.black);
-        renderer.clear();
+        try renderer.setColor(zdl.pixels.Colors.black);
+        try renderer.clear();
 
-        // Draw a rectangle
-        renderer.setColor(zdl.pixels.Colors.red);
-        renderer.fillRect(100, 100, 200, 200);
+        // Draw something
+        try renderer.setColor(zdl.pixels.Colors.red);
+        try renderer.drawLine(0, 0, 100, 100);
+        try renderer.fillRect(200, 200, 50, 50);
+        try renderer.drawRect(300, 300, 50, 50);
 
-        // Draw a line
-        renderer.setColor(zdl.pixels.Colors.green);
-        renderer.drawLine(0, 0, 800, 600);
+        // Present frame
+        try renderer.present();
 
-        // Present the frame
-        renderer.present();
-
-        // Maintain target frame rate
+        // Maintain frame rate
         frame_timer.update();
     }
 }
@@ -93,20 +87,18 @@ test "surface manipulation" {
     defer surface1.destroy();
 
     // Fill with red
-    surface1.fill(zdl.pixels.Colors.red);
+    try surface1.fill(zdl.pixels.Colors.red);
 
     // Draw a blue rectangle
-    surface1.fillRect(zdl.rect.Rect.init(10, 10, 80, 80), zdl.pixels.Colors.blue);
+    try surface1.fillRect(zdl.rect.Rect.init(10, 10, 80, 80), zdl.pixels.Colors.blue);
 
     // Create another surface and blit
     var surface2 = try zdl.surface.Surface.create(50, 50, c.SDL_PIXELFORMAT_RGBA32);
     defer surface2.destroy();
 
     // Fill with green
-    surface2.fill(zdl.pixels.Colors.green);
-
-    // Blit surface2 onto surface1
-    surface1.blit(surface2, zdl.rect.Rect.init(25, 25, 50, 50));
+    try surface2.fill(zdl.pixels.Colors.green);
+    try surface1.blit(surface2, zdl.rect.Rect.init(25, 25, 50, 50));
 
     // Save the result
     try surface1.saveBMP("test_surface.bmp");
@@ -121,7 +113,7 @@ test "input handling" {
         "Input Test",
         800,
         600,
-        .{ .shown = true },
+        c.SDL_WINDOW_RESIZABLE,
     );
     defer window.destroy();
 

@@ -1,11 +1,14 @@
 pub const c = @cImport({
     @cInclude("SDL3/SDL.h");
-    @cInclude("SDL3_mixer/SDL_mixer.h");
-    @cInclude("SDL3_ttf/SDL_ttf.h");
+    if (@hasDecl(@This(), "enable_mixer")) {
+        @cInclude("SDL3_mixer/SDL_mixer.h");
+    }
+    if (@hasDecl(@This(), "enable_ttf")) {
+        @cInclude("SDL3_ttf/SDL_ttf.h");
+    }
 });
 
 const std = @import("std");
-pub const errors = @import("core/error.zig");
 
 /// SDL initialization flags
 pub const InitFlags = struct {
@@ -35,7 +38,7 @@ pub const InitFlags = struct {
 /// Initialize SDL with the specified subsystems
 pub fn init(flags: InitFlags) !void {
     if (!c.SDL_Init(flags.toSDLFlags())) {
-        return errors.SDLError.InitializationFailed;
+        return error.SDLError;
     }
 }
 
@@ -45,15 +48,21 @@ pub fn quit() void {
 }
 
 // Module exports
+pub const core = @import("core/module.zig");
+pub const audio = @import("audio/module.zig");
+pub const graphics = @import("graphics/module.zig");
+pub const input = @import("input/module.zig");
+pub const mixer = @import("mixer/mixer.zig");
+pub const system = @import("system/module.zig");
+pub const ttf = @import("ttf/ttf.zig");
 pub const video = @import("video/module.zig");
 pub const render = @import("video/render.zig");
-pub const events = @import("core/events.zig");
-pub const rect = @import("video/rect.zig");
-pub const pixels = @import("video/pixels.zig");
 pub const surface = @import("video/surface.zig");
+pub const events = @import("core/events.zig");
 pub const timer = @import("core/timer.zig");
-pub const ttf = @import("ttf/ttf.zig");
+pub const pixels = video.pixels;
+pub const rect = video.rect;
 
 test {
-    @import("tests.zig");
+    _ = @import("tests.zig");
 }

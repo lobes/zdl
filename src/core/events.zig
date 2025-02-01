@@ -257,32 +257,25 @@ pub fn pollEvent() ?Event {
     return null;
 }
 
-test "event polling" {
-    const core = @import("../core/module.zig");
-    try core.init.init(.{ .video = true });
-    defer core.init.quit();
+test "event handling" {
+    const sdl = @import("../core/module.zig");
+    try sdl.init(.{ .video = true });
+    defer sdl.quit();
 
     const video = @import("../video/module.zig");
     var window = try video.Window.create(
         "Test Window",
         800,
         600,
-        .{ .shown = true },
+        c.SDL_WINDOW_RESIZABLE,
     );
     defer window.destroy();
 
-    // Poll events for a few frames to test event handling
-    var frame: u32 = 0;
-    while (frame < 10) : (frame += 1) {
-        while (pollEvent()) |event| {
-            switch (event) {
-                .quit => break,
-                .key_down => |key| {
-                    if (key.keycode == .escape) break;
-                },
-                else => {},
-            }
+    // Test event polling
+    while (pollEvent()) |event| {
+        switch (event) {
+            .quit => break,
+            else => {},
         }
-        std.time.sleep(16 * std.time.ns_per_ms);
     }
 }

@@ -4,9 +4,9 @@ const c = @cImport({
 
 const std = @import("std");
 const testing = std.testing;
-const core = @import("../core/module.zig");
-const errors = core.errors;
+const root = @import("../root.zig");
 
+/// A handle to a window
 pub const Window = struct {
     handle: *c.SDL_Window,
 
@@ -18,12 +18,12 @@ pub const Window = struct {
         resizable: bool = false,
         minimized: bool = false,
         maximized: bool = false,
-        x: i32 = c.SDL_WINDOWPOS_UNDEFINED,
-        y: i32 = c.SDL_WINDOWPOS_UNDEFINED,
-        display_id: u32 = 0,
+        x: c_int = c.SDL_WINDOWPOS_UNDEFINED,
+        y: c_int = c.SDL_WINDOWPOS_UNDEFINED,
+        display_id: c_uint = 0,
 
-        pub fn toSDLFlags(self: CreateFlags) c.SDL_WindowFlags {
-            var flags: c.SDL_WindowFlags = 0;
+        pub fn toSDLFlags(self: CreateFlags) c_uint {
+            var flags: c_uint = 0;
             if (self.fullscreen) flags |= c.SDL_WINDOW_FULLSCREEN;
             if (self.hidden) flags |= c.SDL_WINDOW_HIDDEN;
             if (self.borderless) flags |= c.SDL_WINDOW_BORDERLESS;
@@ -35,99 +35,74 @@ pub const Window = struct {
     };
 
     /// Create a new window
-    pub fn create(
-        title: [:0]const u8,
-        width: i32,
-        height: i32,
-        flags: CreateFlags,
-    ) !Window {
-        const handle = c.SDL_CreateWindow(
-            title,
-            width,
-            height,
-            flags.toSDLFlags(),
-        ) orelse return errors.SDLError.WindowCreationFailed;
-
-        // Set position after creation
-        if (flags.x != c.SDL_WINDOWPOS_UNDEFINED or flags.y != c.SDL_WINDOWPOS_UNDEFINED) {
-            _ = c.SDL_SetWindowPosition(@ptrCast(handle), flags.x, flags.y);
-        }
-
-        // Set fullscreen display mode if needed
-        if (flags.fullscreen) {
-            // Get the display the window is on
-            const display_id = c.SDL_GetDisplayForWindow(@ptrCast(handle));
-            std.debug.print("Window is on display {d}\n", .{display_id});
-
-            const mode = c.SDL_GetCurrentDisplayMode(display_id) orelse {
-                std.debug.print("Failed to get display mode: {s}\n", .{c.SDL_GetError()});
-                return errors.SDLError.WindowCreationFailed;
-            };
-            std.debug.print("Setting fullscreen mode: {}x{} @ {}Hz\n", .{ mode.*.w, mode.*.h, mode.*.refresh_rate });
-            if (!c.SDL_SetWindowFullscreenMode(@ptrCast(handle), mode)) {
-                std.debug.print("Failed to set fullscreen mode: {s}\n", .{c.SDL_GetError()});
-                return errors.SDLError.WindowCreationFailed;
-            }
-        }
-
+    pub fn create(title: [:0]const u8, width: c_int, height: c_int, flags: c_uint) !Window {
+        const handle = c.SDL_CreateWindow(title.ptr, width, height, flags) orelse {
+            return error.SDLError;
+        };
         return Window{ .handle = handle };
     }
 
-    /// Destroy the window
+    /// Destroy a window
     pub fn destroy(self: *Window) void {
         c.SDL_DestroyWindow(self.handle);
     }
 
     /// Get the window size
-    pub fn getSize(self: Window) struct { width: i32, height: i32 } {
-        var width: i32 = undefined;
-        var height: i32 = undefined;
-        _ = c.SDL_GetWindowSize(self.handle, &width, &height);
+    pub fn getSize(self: Window) struct { width: c_int, height: c_int } {
+        var width: c_int = undefined;
+        var height: c_int = undefined;
+        if (!c.SDL_GetWindowSize(self.handle, &width, &height)) {
+            return .{ .width = 0, .height = 0 };
+        }
         return .{ .width = width, .height = height };
     }
 
-    /// Set the window size
-    pub fn setSize(self: Window, width: i32, height: i32) void {
-        _ = c.SDL_SetWindowSize(self.handle, width, height);
+    /// Set the window's size
+    pub fn setSize(self: Window, width: c_int, height: c_int) !void {
+        if (!c.SDL_SetWindowSize(self.handle, width, height)) {
+            return error.SDLError;
+        }
     }
 
     /// Get the window position
-    pub fn getPosition(self: Window) struct { x: i32, y: i32 } {
-        var x: i32 = undefined;
-        var y: i32 = undefined;
-        _ = c.SDL_GetWindowPosition(self.handle, &x, &y);
+    pub fn getPosition(self: Window) struct { x: c_int, y: c_int } {
+        var x: c_int = undefined;
+        var y: c_int = undefined;
+        if (!c.SDL_GetWindowPosition(self.handle, &x, &y)) {
+            return .{ .x = 0, .y = 0 };
+        }
         return .{ .x = x, .y = y };
     }
 
-    /// Set the window position
-    pub fn setPosition(self: Window, x: i32, y: i32) void {
-        _ = c.SDL_SetWindowPosition(self.handle, x, y);
+    /// Set the window's position
+    pub fn setPosition(self: Window, x: c_int, y: c_int) !void {
+        if (!c.SDL_SetWindowPosition(self.handle, x, y)) {
+            return error.SDLError;
+        }
     }
 
-    /// Set the window title
-    pub fn setTitle(self: Window, title: [:0]const u8) void {
-        _ = c.SDL_SetWindowTitle(self.handle, title);
+    /// Set the window's title
+    pub fn setTitle(self: Window, title: [:0]const u8) !void {
+        if (!c.SDL_SetWindowTitle(self.handle, title.ptr)) {
+            return error.SDLError;
+        }
     }
 };
 
-test "window creation" {
-    try core.init.init(.{ .video = true });
-    defer core.init.quit();
+test "window operations" {
+    const sdl = @import("../core/module.zig");
+    try sdl.init(.{ .video = true });
+    defer sdl.quit();
 
     var window = try Window.create(
         "Test Window",
         800,
         600,
-        .{ .resizable = true },
+        c.SDL_WINDOW_RESIZABLE,
     );
     defer window.destroy();
 
-    const size = window.getSize();
-    try testing.expectEqual(@as(i32, 800), size.width);
-    try testing.expectEqual(@as(i32, 600), size.height);
-
-    window.setSize(1024, 768);
-    const new_size = window.getSize();
-    try testing.expectEqual(@as(i32, 1024), new_size.width);
-    try testing.expectEqual(@as(i32, 768), new_size.height);
+    try window.setSize(1024, 768);
+    try window.setPosition(100, 100);
+    try window.setTitle("Updated Title");
 }

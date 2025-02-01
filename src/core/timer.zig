@@ -1,57 +1,44 @@
-//! High-resolution timing utilities for SDL3.
+//! Timer and frame rate management utilities.
 //!
-//! This module provides timing and delay functionality:
-//! - High-resolution time queries
-//! - Millisecond and nanosecond precision
+//! This module provides utilities for:
 //! - Frame rate control
-//! - Delay operations
-//! - Timer pause/resume support
+//! - High resolution timing
+//! - Frame time measurement
+//! - Frame rate limiting
 //!
 //! Dependencies:
-//! - Core SDL3 timer functionality
-//! - Uses init.zig for initialization
+//! - Core SDL3 timer functions
 //!
-//! Thread safety: Most timer operations are thread-safe.
-//! Each Timer instance should be used by a single thread,
-//! but different threads can safely use different timers.
-//!
-//! Performance notes:
-//! - getTicksNS() provides higher precision but may be slower
-//! - delay() yields CPU time to other processes
-//! - FrameTimer helps maintain consistent frame rates
+//! Thread safety: SDL's timer functions are thread-safe.
 //!
 //! Example:
 //! ```zig
-//! // Basic delay
-//! delay(16); // Wait ~16ms
-//!
-//! // High precision timer
-//! var timer = Timer.init();
-//! timer.start();
-//! // Do work...
-//! const elapsed = timer.getTicks();
-//!
-//! // Frame rate control
+//! // Create a frame timer for 60 FPS
 //! var frame_timer = FrameTimer.init(60);
 //! frame_timer.start();
+//!
+//! // Game loop
 //! while (running) {
-//!     // Render frame...
-//!     frame_timer.update(); // Maintains ~60 FPS
+//!     // Update game state
+//!     update();
+//!     // Render frame
+//!     render();
+//!     // Maintain target frame rate
+//!     frame_timer.update();
 //! }
 //! ```
 
+const std = @import("std");
 const c = @cImport({
     @cInclude("SDL3/SDL.h");
 });
 
-const testing = @import("std").testing;
-
 /// Get the number of milliseconds since SDL library initialization
-pub fn getTicksMS() u64 {
+pub fn getTicks() u64 {
     return c.SDL_GetTicks();
 }
 
-/// Get the number of milliseconds since SDL library initialization with higher precision
+/// Get the number of microseconds since SDL library initialization
 pub fn getTicksNS() u64 {
     return c.SDL_GetTicksNS();
 }
@@ -61,149 +48,109 @@ pub fn delay(ms: u32) void {
     c.SDL_Delay(ms);
 }
 
-/// A high resolution timer
-pub const Timer = struct {
-    start_ticks: u64 = 0,
-    paused_ticks: u64 = 0,
-    paused: bool = false,
-    started: bool = false,
+/// Wait a specified number of microseconds
+pub fn delayNS(ns: u64) void {
+    c.SDL_DelayNS(ns);
+}
 
-    /// Create a new timer
-    pub fn init() Timer {
-        return Timer{};
-    }
+/// Get the current value of the high resolution counter
+pub fn getPerformanceCounter() u64 {
+    return c.SDL_GetPerformanceCounter();
+}
 
-    /// Start the timer
-    pub fn start(self: *Timer) void {
-        self.started = true;
-        self.paused = false;
-        self.start_ticks = getTicksMS();
-        self.paused_ticks = 0;
-    }
+/// Get the count per second of the high resolution counter
+pub fn getPerformanceFrequency() u64 {
+    return c.SDL_GetPerformanceFrequency();
+}
 
-    /// Stop the timer
-    pub fn stop(self: *Timer) void {
-        self.started = false;
-        self.paused = false;
-        self.start_ticks = 0;
-        self.paused_ticks = 0;
-    }
-
-    /// Pause the timer
-    pub fn pause(self: *Timer) void {
-        if (self.started and !self.paused) {
-            self.paused = true;
-            self.paused_ticks = getTicksMS() - self.start_ticks;
-            self.start_ticks = 0;
-        }
-    }
-
-    /// Unpause the timer
-    pub fn unpause(self: *Timer) void {
-        if (self.started and self.paused) {
-            self.paused = false;
-            self.start_ticks = getTicksMS() - self.paused_ticks;
-            self.paused_ticks = 0;
-        }
-    }
-
-    /// Get the timer's time in milliseconds
-    pub fn getTicks(self: Timer) u64 {
-        if (!self.started) {
-            return 0;
-        }
-
-        if (self.paused) {
-            return self.paused_ticks;
-        }
-
-        return getTicksMS() - self.start_ticks;
-    }
-
-    /// Check if the timer is started
-    pub fn isStarted(self: Timer) bool {
-        return self.started;
-    }
-
-    /// Check if the timer is paused
-    pub fn isPaused(self: Timer) bool {
-        return self.started and self.paused;
-    }
-};
-
-/// Frame rate controller
+/// A timer for managing frame rate
 pub const FrameTimer = struct {
-    timer: Timer,
-    frame_count: u32 = 0,
-    fps: f32 = 0,
     target_fps: f32,
-    frame_delay: u32,
+    frame_time: f32,
+    last_time: u64,
+    freq: u64,
 
-    /// Create a new frame timer with a target FPS
+    /// Initialize a frame timer with a target frame rate
     pub fn init(target_fps: f32) FrameTimer {
-        return .{
-            .timer = Timer.init(),
+        return FrameTimer{
             .target_fps = target_fps,
-            .frame_delay = @intFromFloat(1000.0 / target_fps),
+            .frame_time = 1.0 / target_fps,
+            .last_time = getPerformanceCounter(),
+            .freq = getPerformanceFrequency(),
         };
     }
 
     /// Start the frame timer
     pub fn start(self: *FrameTimer) void {
-        self.timer.start();
+        self.last_time = getPerformanceCounter();
     }
 
-    /// Update the frame timer and delay if necessary to maintain target FPS
+    /// Update the frame timer and delay if necessary to maintain target frame rate
     pub fn update(self: *FrameTimer) void {
-        self.frame_count += 1;
+        const current_time = getPerformanceCounter();
+        const elapsed = @as(f32, @floatFromInt(current_time - self.last_time)) / @as(f32, @floatFromInt(self.freq));
 
-        const elapsed = self.timer.getTicks();
-        if (elapsed >= 1000) {
-            self.fps = @as(f32, @floatFromInt(self.frame_count)) * (1000.0 / @as(f32, @floatFromInt(elapsed)));
-            self.frame_count = 0;
-            self.timer.start();
+        if (elapsed < self.frame_time) {
+            const delay_time = @as(u32, @intFromFloat((self.frame_time - elapsed) * 1000.0));
+            delay(delay_time);
         }
 
-        // Delay to maintain target FPS
-        const frame_time = getTicksMS() - self.timer.start_ticks;
-        if (frame_time < self.frame_delay) {
-            delay(self.frame_delay - @as(u32, @intCast(frame_time)));
-        }
+        self.last_time = getPerformanceCounter();
     }
 
-    /// Get the current FPS
+    /// Get the elapsed time since the last update in seconds
+    pub fn getElapsed(self: FrameTimer) f32 {
+        const current_time = getPerformanceCounter();
+        return @as(f32, @floatFromInt(current_time - self.last_time)) / @as(f32, @floatFromInt(self.freq));
+    }
+
+    /// Get the current frame rate
     pub fn getFPS(self: FrameTimer) f32 {
-        return self.fps;
+        const elapsed = self.getElapsed();
+        if (elapsed > 0) {
+            return 1.0 / elapsed;
+        }
+        return 0;
     }
 };
 
-test "timer operations" {
-    const init = @import("init.zig");
-    try init.init(.{ .video = true });
-    defer init.quit();
+test "frame timer" {
+    const zdl = @import("module.zig");
+    try zdl.init(.{});
+    defer zdl.quit();
 
-    // Test basic timer
-    var timer = Timer.init();
+    var timer = FrameTimer.init(60);
     timer.start();
-    delay(100);
-    const elapsed = timer.getTicks();
-    try testing.expect(elapsed >= 100);
 
-    // Test pause/unpause
-    timer.pause();
-    const paused_time = timer.getTicks();
-    delay(100);
-    try testing.expectEqual(paused_time, timer.getTicks());
-    timer.unpause();
-    delay(100);
-    try testing.expect(timer.getTicks() > paused_time);
+    // Test that frame time is correct
+    try std.testing.expectApproxEqAbs(timer.frame_time, 1.0 / 60.0, 0.0001);
 
-    // Test frame timer
-    var frame_timer = FrameTimer.init(60);
-    frame_timer.start();
+    // Test that elapsed time increases
+    const start_elapsed = timer.getElapsed();
+    delay(16); // Delay for one frame at 60 FPS
+    const end_elapsed = timer.getElapsed();
+    try std.testing.expect(end_elapsed > start_elapsed);
 
-    // Run for at least 1 second to get a valid FPS reading
-    delay(1000);
-    frame_timer.update();
-    try testing.expect(frame_timer.getFPS() > 0);
+    // Test frame rate limiting
+    timer.update();
+    const fps = timer.getFPS();
+    try std.testing.expect(fps <= 60.0);
+}
+
+test "timer operations" {
+    const zdl = @import("module.zig");
+    try zdl.init(.{});
+    defer zdl.quit();
+
+    // Test basic timing functions
+    const start = getTicks();
+    delay(10);
+    const end = getTicks();
+    try std.testing.expect(end >= start + 10);
+
+    // Test nanosecond precision
+    const start_ns = getTicksNS();
+    delayNS(1000000); // 1ms in ns
+    const end_ns = getTicksNS();
+    try std.testing.expect(end_ns >= start_ns + 1000000);
 }

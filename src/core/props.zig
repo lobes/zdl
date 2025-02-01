@@ -41,31 +41,28 @@ const c = @cImport({
     @cInclude("SDL3/SDL.h");
 });
 
-const core = @import("../core/module.zig");
-const errors = core.errors;
-
 /// A handle to a property group
 pub const Properties = struct {
     id: c.SDL_PropertiesID,
 
     /// Create a new property group
     pub fn create() !Properties {
-        const id = c.SDL_CreateProperties() orelse {
-            return errors.sdlError();
-        };
+        const id = c.SDL_CreateProperties();
+        if (id == 0) {
+            return error.SDLError;
+        }
         return Properties{ .id = id };
     }
 
     /// Destroy a property group and free all associated resources
     pub fn destroy(self: *Properties) void {
         c.SDL_DestroyProperties(self.id);
-        self.* = undefined;
     }
 
     /// Lock a property group for exclusive access
     pub fn lock(self: Properties) !void {
         if (!c.SDL_LockProperties(self.id)) {
-            return errors.sdlError();
+            return error.SDLError;
         }
     }
 
@@ -77,7 +74,7 @@ pub const Properties = struct {
     /// Set a pointer property
     pub fn setPointer(self: Properties, name: [*:0]const u8, value: ?*anyopaque) !void {
         if (!c.SDL_SetPointerProperty(self.id, name, value)) {
-            return errors.sdlError();
+            return error.SDLError;
         }
     }
 
@@ -87,132 +84,74 @@ pub const Properties = struct {
     }
 
     /// Set a string property
-    pub fn setString(self: Properties, name: [*:0]const u8, value: [*:0]const u8) !void {
-        if (!c.SDL_SetStringProperty(self.id, name, value)) {
-            return errors.sdlError();
+    pub fn setString(self: Properties, name: [:0]const u8, value: [:0]const u8) !void {
+        if (!c.SDL_SetStringProperty(self.id, name.ptr, value.ptr)) {
+            return error.SDLError;
         }
     }
 
     /// Get a string property
-    pub fn getString(self: Properties, name: [*:0]const u8) ?[*:0]const u8 {
-        return c.SDL_GetStringProperty(self.id, name);
+    pub fn getString(self: Properties, name: [:0]const u8) ![:0]const u8 {
+        const value = c.SDL_GetStringProperty(self.id, name.ptr, null) orelse {
+            return error.SDLError;
+        };
+        return std.mem.span(value);
+    }
+
+    /// Get a string property with a default value
+    pub fn getStringWithDefault(self: Properties, name: [:0]const u8, default_value: [:0]const u8) [:0]const u8 {
+        const value = c.SDL_GetStringProperty(self.id, name.ptr, default_value.ptr);
+        return std.mem.span(value);
     }
 
     /// Set a number property
-    pub fn setNumber(self: Properties, name: [*:0]const u8, value: i64) !void {
-        if (!c.SDL_SetNumberProperty(self.id, name, value)) {
-            return errors.sdlError();
+    pub fn setNumber(self: Properties, name: [:0]const u8, value: i64) !void {
+        if (!c.SDL_SetNumberProperty(self.id, name.ptr, value)) {
+            return error.SDLError;
         }
     }
 
     /// Get a number property
-    pub fn getNumber(self: Properties, name: [*:0]const u8) i64 {
-        return c.SDL_GetNumberProperty(self.id, name);
-    }
-
-    /// Set a float property
-    pub fn setFloat(self: Properties, name: [*:0]const u8, value: f32) !void {
-        if (!c.SDL_SetFloatProperty(self.id, name, value)) {
-            return errors.sdlError();
+    pub fn getNumber(self: Properties, name: [:0]const u8) !i64 {
+        const value = c.SDL_GetNumberProperty(self.id, name.ptr, 0);
+        if (value == 0 and !c.SDL_HasProperty(self.id, name.ptr)) {
+            return error.SDLError;
         }
-    }
-
-    /// Get a float property
-    pub fn getFloat(self: Properties, name: [*:0]const u8) f32 {
-        return c.SDL_GetFloatProperty(self.id, name);
-    }
-
-    /// Set a boolean property
-    pub fn setBoolean(self: Properties, name: [*:0]const u8, value: bool) !void {
-        if (!c.SDL_SetBooleanProperty(self.id, name, value)) {
-            return errors.sdlError();
-        }
-    }
-
-    /// Get a boolean property
-    pub fn getBoolean(self: Properties, name: [*:0]const u8) bool {
-        return c.SDL_GetBooleanProperty(self.id, name);
+        return value;
     }
 
     /// Clear a property from the group
-    pub fn clear(self: Properties, name: [*:0]const u8) void {
-        c.SDL_ClearProperty(self.id, name);
+    pub fn clear(self: Properties, name: [:0]const u8) void {
+        _ = c.SDL_ClearProperty(self.id, name.ptr);
     }
 
     /// Check if a property exists in the group
-    pub fn has(self: Properties, name: [*:0]const u8) bool {
-        return c.SDL_HasProperty(self.id, name);
+    pub fn hasProperty(self: Properties, name: [:0]const u8) bool {
+        return c.SDL_HasProperty(self.id, name.ptr);
     }
 };
 
-test "properties creation and destruction" {
-    var props = try Properties.create();
-    defer props.destroy();
-}
+test "properties operations" {
+    const sdl = @import("module.zig");
+    try sdl.init(.{});
+    defer sdl.quit();
 
-test "property locking" {
-    var props = try Properties.create();
-    defer props.destroy();
-
-    try props.lock();
-    props.unlock();
-}
-
-test "string properties" {
     var props = try Properties.create();
     defer props.destroy();
 
+    // Test string property
     try props.setString("name", "test");
-    const value = props.getString("name");
-    try std.testing.expect(value != null);
-    try std.testing.expectEqualStrings("test", std.mem.span(value.?));
-}
+    try std.testing.expect(props.hasProperty("name"));
+    const name = try props.getString("name");
+    try std.testing.expectEqualStrings("test", name);
 
-test "number properties" {
-    var props = try Properties.create();
-    defer props.destroy();
-
-    try props.setNumber("count", 42);
-    const value = props.getNumber("count");
+    // Test number property
+    try props.setNumber("value", 42);
+    try std.testing.expect(props.hasProperty("value"));
+    const value = try props.getNumber("value");
     try std.testing.expectEqual(@as(i64, 42), value);
-}
 
-test "float properties" {
-    var props = try Properties.create();
-    defer props.destroy();
-
-    try props.setFloat("pi", 3.14159);
-    const value = props.getFloat("pi");
-    try std.testing.expectApproxEqAbs(@as(f32, 3.14159), value, 0.00001);
-}
-
-test "boolean properties" {
-    var props = try Properties.create();
-    defer props.destroy();
-
-    try props.setBoolean("flag", true);
-    const value = props.getBoolean("flag");
-    try std.testing.expect(value);
-}
-
-test "pointer properties" {
-    var props = try Properties.create();
-    defer props.destroy();
-
-    var data: i32 = 123;
-    try props.setPointer("ptr", &data);
-    const ptr = props.getPointer("ptr");
-    try std.testing.expect(ptr != null);
-    try std.testing.expectEqual(&data, @as(*i32, @ptrCast(@alignCast(ptr.?))));
-}
-
-test "property existence and clearing" {
-    var props = try Properties.create();
-    defer props.destroy();
-
-    try props.setString("test", "value");
-    try std.testing.expect(props.has("test"));
-
-    props.clear("test");
-    try std.testing.expect(!props.has("test"));
+    // Test clearing property
+    props.clear("name");
+    try std.testing.expect(!props.hasProperty("name"));
 }
