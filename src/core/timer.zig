@@ -29,9 +29,7 @@
 //! ```
 
 const std = @import("std");
-const c = @cImport({
-    @cInclude("SDL3/SDL.h");
-});
+const c = @import("root").c;
 
 /// Get the number of milliseconds since SDL library initialization
 pub fn getTicks() u64 {

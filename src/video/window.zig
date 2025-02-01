@@ -1,6 +1,4 @@
-const c = @cImport({
-    @cInclude("SDL3/SDL.h");
-});
+const c = @import("root").c;
 
 const std = @import("std");
 const testing = std.testing;
@@ -35,11 +33,11 @@ pub const Window = struct {
     };
 
     /// Create a new window
-    pub fn create(title: [:0]const u8, width: c_int, height: c_int, flags: c_uint) !Window {
-        const handle = c.SDL_CreateWindow(title.ptr, width, height, flags) orelse {
-            return error.SDLError;
+    pub fn create(title: [:0]const u8, width: i32, height: i32, flags: u32) !Window {
+        const window = c.SDL_CreateWindow(title.ptr, width, height, flags) orelse {
+            return error.SDLWindowCreationFailed;
         };
-        return Window{ .handle = handle };
+        return Window{ .handle = window };
     }
 
     /// Destroy a window
@@ -86,6 +84,14 @@ pub const Window = struct {
         if (!c.SDL_SetWindowTitle(self.handle, title.ptr)) {
             return error.SDLError;
         }
+    }
+
+    pub fn show(self: *Window) void {
+        c.SDL_ShowWindow(self.handle);
+    }
+
+    pub fn hide(self: *Window) void {
+        c.SDL_HideWindow(self.handle);
     }
 };
 

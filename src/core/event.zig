@@ -46,28 +46,71 @@ const c = @cImport({
 
 const std = @import("std");
 
-pub const Event = union(enum) {
+/// SDL event types with proper Zig type safety
+pub const EventType = enum(u32) {
+    quit = c.SDL_EVENT_QUIT,
+    key_down = c.SDL_EVENT_KEY_DOWN,
+    key_up = c.SDL_EVENT_KEY_UP,
+    mouse_motion = c.SDL_EVENT_MOUSE_MOTION,
+    mouse_button_down = c.SDL_EVENT_MOUSE_BUTTON_DOWN,
+    mouse_button_up = c.SDL_EVENT_MOUSE_BUTTON_UP,
+    window_shown = c.SDL_EVENT_WINDOW_SHOWN,
+    window_hidden = c.SDL_EVENT_WINDOW_HIDDEN,
+    window_exposed = c.SDL_EVENT_WINDOW_EXPOSED,
+    window_moved = c.SDL_EVENT_WINDOW_MOVED,
+    window_resized = c.SDL_EVENT_WINDOW_RESIZED,
+    window_minimized = c.SDL_EVENT_WINDOW_MINIMIZED,
+    window_maximized = c.SDL_EVENT_WINDOW_MAXIMIZED,
+    window_restored = c.SDL_EVENT_WINDOW_RESTORED,
+    window_focus_gained = c.SDL_EVENT_WINDOW_FOCUS_GAINED,
+    window_focus_lost = c.SDL_EVENT_WINDOW_FOCUS_LOST,
+    window_display_changed = c.SDL_EVENT_WINDOW_DISPLAY_CHANGED,
+    text_input = c.SDL_EVENT_TEXT_INPUT,
+    _,
+};
+
+pub const Event = union(EventType) {
     quit,
     key_down: KeyEvent,
     key_up: KeyEvent,
     mouse_motion: MouseMotionEvent,
     mouse_button_down: MouseButtonEvent,
     mouse_button_up: MouseButtonEvent,
-    window: WindowEvent,
+    window_shown,
+    window_hidden,
+    window_exposed,
+    window_moved: WindowEvent,
+    window_resized: WindowEvent,
+    window_minimized,
+    window_maximized,
+    window_restored,
+    window_focus_gained,
+    window_focus_lost,
+    window_display_changed: WindowEvent,
     text_input: TextInputEvent,
-    unknown,
+    _: void,
 
     pub fn from(sdl_event: c.SDL_Event) Event {
         return switch (sdl_event.type) {
-            c.SDL_EVENT_QUIT => Event.quit,
+            c.SDL_EVENT_QUIT => Event{ .quit = {} },
             c.SDL_EVENT_KEY_DOWN => Event{ .key_down = KeyEvent.from(sdl_event.key) },
             c.SDL_EVENT_KEY_UP => Event{ .key_up = KeyEvent.from(sdl_event.key) },
             c.SDL_EVENT_MOUSE_MOTION => Event{ .mouse_motion = MouseMotionEvent.from(sdl_event.motion) },
             c.SDL_EVENT_MOUSE_BUTTON_DOWN => Event{ .mouse_button_down = MouseButtonEvent.from(sdl_event.button) },
             c.SDL_EVENT_MOUSE_BUTTON_UP => Event{ .mouse_button_up = MouseButtonEvent.from(sdl_event.button) },
-            c.SDL_EVENT_WINDOW_RESIZED => Event{ .window = WindowEvent.from(sdl_event.window) },
+            c.SDL_EVENT_WINDOW_SHOWN => Event{ .window_shown = {} },
+            c.SDL_EVENT_WINDOW_HIDDEN => Event{ .window_hidden = {} },
+            c.SDL_EVENT_WINDOW_EXPOSED => Event{ .window_exposed = {} },
+            c.SDL_EVENT_WINDOW_MOVED => Event{ .window_moved = WindowEvent.from(sdl_event.window) },
+            c.SDL_EVENT_WINDOW_RESIZED => Event{ .window_resized = WindowEvent.from(sdl_event.window) },
+            c.SDL_EVENT_WINDOW_MINIMIZED => Event{ .window_minimized = {} },
+            c.SDL_EVENT_WINDOW_MAXIMIZED => Event{ .window_maximized = {} },
+            c.SDL_EVENT_WINDOW_RESTORED => Event{ .window_restored = {} },
+            c.SDL_EVENT_WINDOW_FOCUS_GAINED => Event{ .window_focus_gained = {} },
+            c.SDL_EVENT_WINDOW_FOCUS_LOST => Event{ .window_focus_lost = {} },
+            c.SDL_EVENT_WINDOW_DISPLAY_CHANGED => Event{ .window_display_changed = WindowEvent.from(sdl_event.window) },
             c.SDL_EVENT_TEXT_INPUT => Event{ .text_input = TextInputEvent.from(sdl_event.text) },
-            else => Event.unknown,
+            else => Event{ ._ = {} },
         };
     }
 };
@@ -156,10 +199,102 @@ pub const TextInputEvent = struct {
 
 pub const Scancode = enum(c.SDL_Scancode) {
     unknown = c.SDL_SCANCODE_UNKNOWN,
+
+    // Letters
     a = c.SDL_SCANCODE_A,
     b = c.SDL_SCANCODE_B,
     c = c.SDL_SCANCODE_C,
-    // ... add more as needed
+    d = c.SDL_SCANCODE_D,
+    e = c.SDL_SCANCODE_E,
+    f = c.SDL_SCANCODE_F,
+    g = c.SDL_SCANCODE_G,
+    h = c.SDL_SCANCODE_H,
+    i = c.SDL_SCANCODE_I,
+    j = c.SDL_SCANCODE_J,
+    k = c.SDL_SCANCODE_K,
+    l = c.SDL_SCANCODE_L,
+    m = c.SDL_SCANCODE_M,
+    n = c.SDL_SCANCODE_N,
+    o = c.SDL_SCANCODE_O,
+    p = c.SDL_SCANCODE_P,
+    q = c.SDL_SCANCODE_Q,
+    r = c.SDL_SCANCODE_R,
+    s = c.SDL_SCANCODE_S,
+    t = c.SDL_SCANCODE_T,
+    u = c.SDL_SCANCODE_U,
+    v = c.SDL_SCANCODE_V,
+    w = c.SDL_SCANCODE_W,
+    x = c.SDL_SCANCODE_X,
+    y = c.SDL_SCANCODE_Y,
+    z = c.SDL_SCANCODE_Z,
+
+    // Numbers
+    num1 = c.SDL_SCANCODE_1,
+    num2 = c.SDL_SCANCODE_2,
+    num3 = c.SDL_SCANCODE_3,
+    num4 = c.SDL_SCANCODE_4,
+    num5 = c.SDL_SCANCODE_5,
+    num6 = c.SDL_SCANCODE_6,
+    num7 = c.SDL_SCANCODE_7,
+    num8 = c.SDL_SCANCODE_8,
+    num9 = c.SDL_SCANCODE_9,
+    num0 = c.SDL_SCANCODE_0,
+
+    // Function keys
+    f1 = c.SDL_SCANCODE_F1,
+    f2 = c.SDL_SCANCODE_F2,
+    f3 = c.SDL_SCANCODE_F3,
+    f4 = c.SDL_SCANCODE_F4,
+    f5 = c.SDL_SCANCODE_F5,
+    f6 = c.SDL_SCANCODE_F6,
+    f7 = c.SDL_SCANCODE_F7,
+    f8 = c.SDL_SCANCODE_F8,
+    f9 = c.SDL_SCANCODE_F9,
+    f10 = c.SDL_SCANCODE_F10,
+    f11 = c.SDL_SCANCODE_F11,
+    f12 = c.SDL_SCANCODE_F12,
+
+    // Special keys
+    return_ = c.SDL_SCANCODE_RETURN,
+    escape = c.SDL_SCANCODE_ESCAPE,
+    backspace = c.SDL_SCANCODE_BACKSPACE,
+    tab = c.SDL_SCANCODE_TAB,
+    space = c.SDL_SCANCODE_SPACE,
+    grave_accent = c.SDL_SCANCODE_GRAVE,
+    minus = c.SDL_SCANCODE_MINUS,
+    equals = c.SDL_SCANCODE_EQUALS,
+    left_bracket = c.SDL_SCANCODE_LEFTBRACKET,
+    right_bracket = c.SDL_SCANCODE_RIGHTBRACKET,
+    backslash = c.SDL_SCANCODE_BACKSLASH,
+    semicolon = c.SDL_SCANCODE_SEMICOLON,
+    apostrophe = c.SDL_SCANCODE_APOSTROPHE,
+    comma = c.SDL_SCANCODE_COMMA,
+    period = c.SDL_SCANCODE_PERIOD,
+    slash = c.SDL_SCANCODE_SLASH,
+
+    // Modifiers
+    left_ctrl = c.SDL_SCANCODE_LCTRL,
+    left_shift = c.SDL_SCANCODE_LSHIFT,
+    left_alt = c.SDL_SCANCODE_LALT,
+    left_gui = c.SDL_SCANCODE_LGUI,
+    right_ctrl = c.SDL_SCANCODE_RCTRL,
+    right_shift = c.SDL_SCANCODE_RSHIFT,
+    right_alt = c.SDL_SCANCODE_RALT,
+    right_gui = c.SDL_SCANCODE_RGUI,
+
+    // Navigation
+    up = c.SDL_SCANCODE_UP,
+    down = c.SDL_SCANCODE_DOWN,
+    left = c.SDL_SCANCODE_LEFT,
+    right = c.SDL_SCANCODE_RIGHT,
+    insert = c.SDL_SCANCODE_INSERT,
+    delete = c.SDL_SCANCODE_DELETE,
+    home = c.SDL_SCANCODE_HOME,
+    end = c.SDL_SCANCODE_END,
+    page_up = c.SDL_SCANCODE_PAGEUP,
+    page_down = c.SDL_SCANCODE_PAGEDOWN,
+
+    // Allow any other scancodes
     _,
 };
 
@@ -251,7 +386,7 @@ pub const WindowEventType = enum(u32) {
 /// Poll for currently pending events
 pub fn pollEvent() ?Event {
     var sdl_event: c.SDL_Event = undefined;
-    if (c.SDL_PollEvent(&sdl_event)) {
+    if (c.SDL_PollEvent(&sdl_event) > 0) {
         return Event.from(sdl_event);
     }
     return null;
