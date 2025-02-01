@@ -69,9 +69,8 @@ Add to your `build.zig.zon`:
     .version = "0.1.0",
     .dependencies = .{
         .zdl = .{
-            .url = "https://github.com/yourusername/zdl/archive/refs/tags/v0.1.0.tar.gz",
-            // Update hash after first release
-            .hash = "12345...",
+            .url = "https://github.com/lobes/zdl/archive/refs/tags/v1.1.7.tar.gz",
+            .hash = "12200fc98c62385c07aac654434402148be51895e078189bd9f4cf8dd5a606af45b3",
         },
     },
 }
