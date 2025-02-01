@@ -21,23 +21,20 @@ const c = root.c;
 
 /// Get the version of SDL that is linked against your program
 pub fn getVersion() Version {
-    var ver = std.mem.zeroes(c.SDL_version);
-    c.SDL_GetVersion(&ver);
+    const ver_int = c.SDL_GetVersion();
     return Version{
-        .major = ver.major,
-        .minor = ver.minor,
-        .patch = ver.patch,
+        .major = @intCast((ver_int >> 16) & 0xFF),
+        .minor = @intCast((ver_int >> 8) & 0xFF),
+        .patch = @intCast(ver_int & 0xFF),
     };
 }
 
 /// Get the version of SDL that your program is compiled against
 pub fn getCompiledVersion() Version {
-    var ver = std.mem.zeroes(c.SDL_version);
-    c.SDL_VERSION(&ver);
     return Version{
-        .major = ver.major,
-        .minor = ver.minor,
-        .patch = ver.patch,
+        .major = c.SDL_MAJOR_VERSION,
+        .minor = c.SDL_MINOR_VERSION,
+        .patch = c.SDL_MICRO_VERSION,
     };
 }
 
@@ -59,7 +56,7 @@ pub const Version = struct {
 
     /// Convert to string
     pub fn toString(self: Version) [32:0]u8 {
-        var buf: [32:0]u8 = undefined;
+        var buf: [32:0]u8 = [_:0]u8{0} ** 32;
         _ = std.fmt.bufPrintZ(&buf, "{d}.{d}.{d}", .{
             self.major,
             self.minor,
@@ -84,5 +81,6 @@ test "version info" {
 test "version string" {
     const ver = Version{ .major = 3, .minor = 0, .patch = 0 };
     const str = ver.toString();
-    try std.testing.expectEqualStrings("3.0.0", &str);
+    const expected = "3.0.0";
+    try std.testing.expectEqualStrings(expected, str[0..expected.len]);
 }
