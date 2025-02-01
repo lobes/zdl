@@ -55,9 +55,9 @@
 //! gpu.present();
 //! ```
 
-const window = @import("window.zig");
-const render = @import("render.zig");
-const surface = @import("surface.zig");
+pub const window = @import("window.zig");
+pub const render = @import("render.zig");
+pub const surface = @import("surface.zig");
 pub const pixels = @import("pixels.zig");
 pub const rect = @import("rect.zig");
 

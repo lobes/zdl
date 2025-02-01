@@ -50,9 +50,9 @@
 //!
 //! Note: This module requires SDL_mixer to be installed.
 
-pub const mixer = @import("../mixer/mixer.zig");
+pub usingnamespace @import("mixer.zig");
 
 test {
     // Test all public modules
-    _ = mixer;
+    _ = @import("mixer.zig");
 }

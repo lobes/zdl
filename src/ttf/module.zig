@@ -49,9 +49,9 @@
 //!
 //! Note: This module requires SDL_ttf to be installed.
 
-pub const ttf = @import("ttf.zig");
+pub usingnamespace @import("ttf.zig");
 
 test {
     // Test all public modules
-    _ = ttf;
+    _ = @import("ttf.zig");
 }

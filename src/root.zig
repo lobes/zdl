@@ -55,14 +55,14 @@ pub const core = @import("core/module.zig");
 pub const audio = if (build_options.enable_audio) @import("audio/module.zig") else struct {};
 pub const graphics = if (build_options.enable_graphics) @import("graphics/module.zig") else struct {};
 pub const input = if (build_options.enable_input) @import("input/module.zig") else struct {};
-pub const mixer = if (build_options.enable_mixer) @import("mixer/mixer.zig") else struct {};
+pub const mixer = if (build_options.enable_mixer) @import("mixer/module.zig") else struct {};
 pub const system = if (build_options.enable_system) @import("system/module.zig") else struct {};
-pub const ttf = if (build_options.enable_ttf) @import("ttf/ttf.zig") else struct {};
+pub const ttf = if (build_options.enable_ttf) @import("ttf/module.zig") else struct {};
 pub const video = if (build_options.enable_video) @import("video/module.zig") else struct {};
 
 // Video-related modules (depend on video being enabled)
-pub const render = if (build_options.enable_video) @import("video/render.zig") else struct {};
-pub const surface = if (build_options.enable_video) @import("video/surface.zig") else struct {};
+pub const render = if (build_options.enable_video) video.render else struct {};
+pub const surface = if (build_options.enable_video) video.surface else struct {};
 pub const pixels = if (build_options.enable_video) video.pixels else struct {};
 pub const rect = if (build_options.enable_video) video.rect else struct {};
 

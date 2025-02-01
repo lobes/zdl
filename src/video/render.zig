@@ -43,28 +43,28 @@ pub const Renderer = struct {
 
     /// Clear the current rendering target with the drawing color
     pub fn clear(self: Renderer) !void {
-        if (c.SDL_RenderClear(self.handle)) {
+        if (c.SDL_RenderClear(self.handle) == false) {
             return error.SDLError;
         }
     }
 
     /// Update the screen with any rendering performed since the previous call
     pub fn present(self: Renderer) !void {
-        if (c.SDL_RenderPresent(self.handle)) {
+        if (c.SDL_RenderPresent(self.handle) == false) {
             return error.SDLError;
         }
     }
 
     /// Set the color used for drawing operations
     pub fn setColor(self: Renderer, color: pixels.Color) !void {
-        if (c.SDL_SetRenderDrawColor(self.handle, color.r, color.g, color.b, color.a)) {
+        if (c.SDL_SetRenderDrawColor(self.handle, color.r, color.g, color.b, color.a) == false) {
             return error.SDLError;
         }
     }
 
     /// Draw a line between two points
     pub fn drawLine(self: Renderer, x1: f32, y1: f32, x2: f32, y2: f32) !void {
-        if (c.SDL_RenderLine(self.handle, x1, y1, x2, y2)) {
+        if (c.SDL_RenderLine(self.handle, x1, y1, x2, y2) == false) {
             return error.SDLError;
         }
     }
@@ -72,7 +72,7 @@ pub const Renderer = struct {
     /// Draw a filled rectangle
     pub fn fillRect(self: Renderer, x: f32, y: f32, w: f32, h: f32) !void {
         const fill_rect = c.SDL_FRect{ .x = x, .y = y, .w = w, .h = h };
-        if (c.SDL_RenderFillRect(self.handle, &fill_rect)) {
+        if (c.SDL_RenderFillRect(self.handle, &fill_rect) == false) {
             return error.SDLError;
         }
     }
@@ -80,14 +80,14 @@ pub const Renderer = struct {
     /// Draw a rectangle outline
     pub fn drawRect(self: Renderer, x: f32, y: f32, w: f32, h: f32) !void {
         const draw_rect = c.SDL_FRect{ .x = x, .y = y, .w = w, .h = h };
-        if (c.SDL_RenderRect(self.handle, &draw_rect)) {
+        if (c.SDL_RenderRect(self.handle, &draw_rect) == false) {
             return error.SDLError;
         }
     }
 
     /// Draw debug text at the given position
     pub fn renderText(self: Renderer, x: f32, y: f32, text: []const u8) !void {
-        if (c.SDL_RenderDebugText(self.handle, x, y, text.ptr)) {
+        if (c.SDL_RenderDebugText(self.handle, x, y, text.ptr) == false) {
             return error.SDLError;
         }
     }

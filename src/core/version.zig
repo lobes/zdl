@@ -16,53 +16,73 @@
 //! ```
 
 const std = @import("std");
-const c = @import("../c.zig");
+const root = @import("../root.zig");
+const c = root.c;
 
-/// SDL version information
+/// Get the version of SDL that is linked against your program
+pub fn getVersion() Version {
+    var ver = std.mem.zeroes(c.SDL_version);
+    c.SDL_GetVersion(&ver);
+    return Version{
+        .major = ver.major,
+        .minor = ver.minor,
+        .patch = ver.patch,
+    };
+}
+
+/// Get the version of SDL that your program is compiled against
+pub fn getCompiledVersion() Version {
+    var ver = std.mem.zeroes(c.SDL_version);
+    c.SDL_VERSION(&ver);
+    return Version{
+        .major = ver.major,
+        .minor = ver.minor,
+        .patch = ver.patch,
+    };
+}
+
+/// Get the revision number of SDL that is linked against your program
+pub fn getRevision() [:0]const u8 {
+    return std.mem.span(c.SDL_GetRevision());
+}
+
+/// Get the revision number of SDL that your program is compiled against
+pub fn getCompiledRevision() [:0]const u8 {
+    return std.mem.span(c.SDL_GetRevision()); // SDL3 doesn't have SDL_REVISION anymore
+}
+
+/// Version structure
 pub const Version = struct {
-    pub fn compiled() c_int {
-        return c.SDL_VERSION;
-    }
+    major: u8,
+    minor: u8,
+    patch: u8,
 
-    pub fn linked() c_int {
-        return c.SDL_GetVersion();
-    }
-
-    pub fn revision() []const u8 {
-        return std.mem.span(c.SDL_GetRevision());
-    }
-
-    pub fn major(version: c_int) c_int {
-        return c.SDL_VERSIONNUM_MAJOR(version);
-    }
-
-    pub fn minor(version: c_int) c_int {
-        return c.SDL_VERSIONNUM_MINOR(version);
-    }
-
-    pub fn micro(version: c_int) c_int {
-        return c.SDL_VERSIONNUM_MICRO(version);
-    }
-
-    pub fn isAtLeast(version: c_int, x: c_int, y: c_int, z: c_int) bool {
-        return version >= c.SDL_VERSIONNUM(x, y, z);
+    /// Convert to string
+    pub fn toString(self: Version) [32:0]u8 {
+        var buf: [32:0]u8 = undefined;
+        _ = std.fmt.bufPrintZ(&buf, "{d}.{d}.{d}", .{
+            self.major,
+            self.minor,
+            self.patch,
+        }) catch unreachable;
+        return buf;
     }
 };
 
-test "version" {
-    const ver = Version.linked();
-    try std.testing.expect(ver > 0);
+test "version info" {
+    const ver = getVersion();
+    const compiled = getCompiledVersion();
+    const rev = getRevision();
+    const compiled_rev = getCompiledRevision();
 
-    const rev = Version.revision();
+    try std.testing.expect(ver.major >= 3);
+    try std.testing.expect(compiled.major >= 3);
     try std.testing.expect(rev.len > 0);
+    try std.testing.expect(compiled_rev.len > 0);
+}
 
-    // Test version number extraction
-    const test_ver = c.SDL_VERSIONNUM(3, 2, 1);
-    try std.testing.expectEqual(Version.major(test_ver), 3);
-    try std.testing.expectEqual(Version.minor(test_ver), 2);
-    try std.testing.expectEqual(Version.micro(test_ver), 1);
-
-    // Test version comparison
-    try std.testing.expect(Version.isAtLeast(test_ver, 3, 2, 0));
-    try std.testing.expect(!Version.isAtLeast(test_ver, 3, 2, 2));
+test "version string" {
+    const ver = Version{ .major = 3, .minor = 0, .patch = 0 };
+    const str = ver.toString();
+    try std.testing.expectEqualStrings("3.0.0", &str);
 }

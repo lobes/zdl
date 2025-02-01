@@ -1,6 +1,7 @@
 const std = @import("std");
-const c = @import("../c.zig");
-const init = @import("../root.zig").init;
+const root = @import("../root.zig");
+const c = root.c;
+const init = root.init;
 const PixelFormat = @import("pixels.zig").PixelFormat;
 
 const testing = std.testing;
@@ -48,7 +49,7 @@ pub const Surface = struct {
 
     /// Lock a surface for direct access
     pub fn lock(self: Surface) !void {
-        if (!c.SDL_LockSurface(self.handle)) {
+        if (c.SDL_LockSurface(self.handle) == false) {
             return error.SDLError;
         }
     }
@@ -63,13 +64,13 @@ pub const Surface = struct {
         const format = c.SDL_GetPixelFormatDetails(self.handle.format) orelse return error.SDLError;
         const pixel = c.SDL_MapRGBA(
             format,
-            null,
+            null, // palette (null for RGB/RGBA formats)
             color.r,
             color.g,
             color.b,
             color.a,
         );
-        if (c.SDL_FillSurfaceRect(self.handle, null, pixel)) {
+        if (c.SDL_FillSurfaceRect(self.handle, null, pixel) == false) {
             return error.SDLError;
         }
     }
@@ -80,13 +81,13 @@ pub const Surface = struct {
         const format = c.SDL_GetPixelFormatDetails(self.handle.format) orelse return error.SDLError;
         const pixel = c.SDL_MapRGBA(
             format,
-            null,
+            null, // palette (null for RGB/RGBA formats)
             color.r,
             color.g,
             color.b,
             color.a,
         );
-        if (c.SDL_FillSurfaceRect(self.handle, &sdl_rect, pixel)) {
+        if (c.SDL_FillSurfaceRect(self.handle, &sdl_rect, pixel) == false) {
             return error.SDLError;
         }
     }
@@ -94,7 +95,7 @@ pub const Surface = struct {
     /// Blit (copy) another surface onto this one
     pub fn blit(self: Surface, source: Surface, dst_rect: ?rect.Rect) !void {
         const sdl_rect = if (dst_rect) |r| r.toSDL() else null;
-        if (c.SDL_BlitSurface(source.handle, null, self.handle, if (sdl_rect) |*r| r else null)) {
+        if (c.SDL_BlitSurface(source.handle, null, self.handle, if (sdl_rect) |*r| r else null) == false) {
             return error.SDLError;
         }
     }
@@ -103,14 +104,14 @@ pub const Surface = struct {
     pub fn blitRect(self: Surface, source: Surface, src_rect: rect.Rect, dst_rect: rect.Rect) !void {
         const sdl_src_rect = src_rect.toSDL();
         const sdl_dst_rect = dst_rect.toSDL();
-        if (c.SDL_BlitSurface(source.handle, &sdl_src_rect, self.handle, &sdl_dst_rect)) {
+        if (c.SDL_BlitSurface(source.handle, &sdl_src_rect, self.handle, &sdl_dst_rect) == false) {
             return error.SDLError;
         }
     }
 
     /// Save the surface to a BMP file
     pub fn saveBMP(self: Surface, path: [:0]const u8) !void {
-        if (c.SDL_SaveBMP(self.handle, path)) {
+        if (c.SDL_SaveBMP(self.handle, path) == false) {
             return error.SDLError;
         }
     }
@@ -125,27 +126,27 @@ pub const Surface = struct {
         const format = c.SDL_GetPixelFormatDetails(self.handle.format) orelse return error.SDLError;
         const key = c.SDL_MapRGBA(
             format,
-            null,
+            null, // palette (null for RGB/RGBA formats)
             color.r,
             color.g,
             color.b,
             color.a,
         );
-        if (!c.SDL_SetSurfaceColorKey(self.handle, 1, key)) {
+        if (c.SDL_SetSurfaceColorKey(self.handle, 1, key) == false) {
             return error.SDLError;
         }
     }
 
     /// Set the alpha modulation
     pub fn setAlphaMod(self: Surface, alpha: u8) !void {
-        if (!c.SDL_SetSurfaceAlphaMod(self.handle, alpha)) {
+        if (c.SDL_SetSurfaceAlphaMod(self.handle, alpha) == false) {
             return error.SDLError;
         }
     }
 
     /// Set the color modulation
     pub fn setColorMod(self: Surface, color: pixel_mod.Color) !void {
-        if (!c.SDL_SetSurfaceColorMod(self.handle, color.r, color.g, color.b)) {
+        if (c.SDL_SetSurfaceColorMod(self.handle, color.r, color.g, color.b) == false) {
             return error.SDLError;
         }
     }
@@ -173,7 +174,7 @@ test "surface operations" {
 
 test "surface format" {
     try init(.{ .video = true });
-    defer @import("../root.zig").quit();
+    defer root.quit();
 
     var surface = try Surface.create(100, 100, c.SDL_PIXELFORMAT_RGBA32);
     defer surface.destroy();
