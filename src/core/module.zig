@@ -4,30 +4,24 @@
 //! - System initialization and shutdown
 //! - Event handling and processing
 //! - High-resolution timing
-//! - Error handling
 //! - Properties system
-//! - Asynchronous I/O
-//! - Thread management
-//! - Synchronization primitives
 //! - Runtime configuration
 //! - Logging system
-//! - Byte order operations
 //! - Version information
 //!
 //! Most applications will start with initialization:
 //! ```zig
 //! // Initialize SDL with required subsystems
-//! try core.init.init(.{
+//! try zdl.init(.{
 //!     .video = true,
 //!     .audio = true,
 //! });
-//! defer core.init.quit();
+//! defer zdl.quit();
 //! ```
 //!
 //! Event handling:
 //! ```zig
-//! var event: core.events.Event = undefined;
-//! while (core.events.poll(&event)) {
+//! while (zdl.events.pollEvent()) |event| {
 //!     switch (event) {
 //!         .quit => break,
 //!         else => {},
@@ -37,53 +31,59 @@
 //!
 //! Timing:
 //! ```zig
-//! const start = core.timer.getTicks();
-//! core.timer.delay(16); // 60 FPS
-//! ```
-//!
-//! Thread management:
-//! ```zig
-//! const thread = try core.thread.Thread.spawn(.{}, worker, .{});
-//! defer thread.join();
-//! ```
-//!
-//! Error handling:
-//! ```zig
-//! const result = operation() catch |err| {
-//!     core.log.err("Operation failed: {s}", .{core.errors.getError()});
-//!     return err;
-//! };
+//! const start = zdl.timer.getTicks();
+//! zdl.timer.delay(16); // 60 FPS
 //! ```
 
-pub const init = @import("init.zig");
-pub const errors = @import("error.zig");
+const std = @import("std");
+const c = @cImport({
+    @cInclude("SDL3/SDL.h");
+});
+
+/// Initialize SDL with the specified subsystems
+pub fn init(flags: struct {
+    audio: bool = false,
+    video: bool = false,
+    joystick: bool = false,
+    haptic: bool = false,
+    gamepad: bool = false,
+    events: bool = true,
+    sensor: bool = false,
+    camera: bool = false,
+}) !void {
+    var sdl_flags: u32 = 0;
+    if (flags.audio) sdl_flags |= c.SDL_INIT_AUDIO;
+    if (flags.video) sdl_flags |= c.SDL_INIT_VIDEO;
+    if (flags.joystick) sdl_flags |= c.SDL_INIT_JOYSTICK;
+    if (flags.haptic) sdl_flags |= c.SDL_INIT_HAPTIC;
+    if (flags.gamepad) sdl_flags |= c.SDL_INIT_GAMEPAD;
+    if (flags.events) sdl_flags |= c.SDL_INIT_EVENTS;
+    if (flags.sensor) sdl_flags |= c.SDL_INIT_SENSOR;
+    if (flags.camera) sdl_flags |= c.SDL_INIT_CAMERA;
+
+    if (!c.SDL_Init(sdl_flags)) {
+        return error.SDLError;
+    }
+}
+
+/// Quit SDL and all initialized subsystems
+pub fn quit() void {
+    c.SDL_Quit();
+}
+
 pub const events = @import("events.zig");
 pub const timer = @import("timer.zig");
 pub const props = @import("props.zig");
-pub const async_io = @import("async.zig");
-pub const thread = @import("thread.zig");
-pub const atomic = @import("atomic.zig");
-pub const mutex = @import("mutex.zig");
 pub const hints = @import("hints.zig");
-pub const semaphore = @import("semaphore.zig");
 pub const log = @import("log.zig");
-pub const endian = @import("endian.zig");
 pub const version = @import("version.zig");
 
 test {
     // Test all public modules
-    _ = init;
-    _ = errors;
     _ = events;
     _ = timer;
     _ = props;
-    _ = async_io;
-    _ = thread;
-    _ = atomic;
-    _ = mutex;
     _ = hints;
-    _ = semaphore;
     _ = log;
-    _ = endian;
     _ = version;
 }
