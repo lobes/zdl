@@ -1,5 +1,5 @@
 const std = @import("std");
-const zdl = @import("root.zig");
+const zdl = @import("../zdl.zig");
 const c = zdl.c;
 const build_options = @import("build_options");
 

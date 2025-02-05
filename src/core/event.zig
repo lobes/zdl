@@ -48,12 +48,19 @@ const std = @import("std");
 
 /// SDL event types with proper Zig type safety
 pub const EventType = enum(u32) {
+    first_event = c.SDL_EVENT_FIRST,
     quit = c.SDL_EVENT_QUIT,
-    key_down = c.SDL_EVENT_KEY_DOWN,
-    key_up = c.SDL_EVENT_KEY_UP,
-    mouse_motion = c.SDL_EVENT_MOUSE_MOTION,
-    mouse_button_down = c.SDL_EVENT_MOUSE_BUTTON_DOWN,
-    mouse_button_up = c.SDL_EVENT_MOUSE_BUTTON_UP,
+    app_terminating = c.SDL_EVENT_APP_TERMINATING,
+    app_lowmemory = c.SDL_EVENT_APP_LOWMEMORY,
+    app_willenterbackground = c.SDL_EVENT_APP_WILLENTERBACKGROUND,
+    app_didenterbackground = c.SDL_EVENT_APP_DIDENTERBACKGROUND,
+    app_willenterforeground = c.SDL_EVENT_APP_WILLENTERFOREGROUND,
+    app_didenterforeground = c.SDL_EVENT_APP_DIDENTERFOREGROUND,
+    display_orientation = c.SDL_EVENT_DISPLAY_ORIENTATION,
+    display_connected = c.SDL_EVENT_DISPLAY_CONNECTED,
+    display_disconnected = c.SDL_EVENT_DISPLAY_DISCONNECTED,
+    display_moved = c.SDL_EVENT_DISPLAY_MOVED,
+    display_content_scale_changed = c.SDL_EVENT_DISPLAY_CONTENT_SCALE_CHANGED,
     window_shown = c.SDL_EVENT_WINDOW_SHOWN,
     window_hidden = c.SDL_EVENT_WINDOW_HIDDEN,
     window_exposed = c.SDL_EVENT_WINDOW_EXPOSED,
@@ -62,11 +69,53 @@ pub const EventType = enum(u32) {
     window_minimized = c.SDL_EVENT_WINDOW_MINIMIZED,
     window_maximized = c.SDL_EVENT_WINDOW_MAXIMIZED,
     window_restored = c.SDL_EVENT_WINDOW_RESTORED,
+    window_mouse_enter = c.SDL_EVENT_WINDOW_MOUSE_ENTER,
+    window_mouse_leave = c.SDL_EVENT_WINDOW_MOUSE_LEAVE,
     window_focus_gained = c.SDL_EVENT_WINDOW_FOCUS_GAINED,
     window_focus_lost = c.SDL_EVENT_WINDOW_FOCUS_LOST,
+    window_close_requested = c.SDL_EVENT_WINDOW_CLOSE_REQUESTED,
+    window_take_focus = c.SDL_EVENT_WINDOW_TAKE_FOCUS,
+    window_hit_test = c.SDL_EVENT_WINDOW_HIT_TEST,
+    window_iccprof_changed = c.SDL_EVENT_WINDOW_ICCPROF_CHANGED,
     window_display_changed = c.SDL_EVENT_WINDOW_DISPLAY_CHANGED,
+    key_down = c.SDL_EVENT_KEY_DOWN,
+    key_up = c.SDL_EVENT_KEY_UP,
+    text_editing = c.SDL_EVENT_TEXT_EDITING,
     text_input = c.SDL_EVENT_TEXT_INPUT,
-    _,
+    keymap_changed = c.SDL_EVENT_KEYMAP_CHANGED,
+    mouse_motion = c.SDL_EVENT_MOUSE_MOTION,
+    mouse_button_down = c.SDL_EVENT_MOUSE_BUTTON_DOWN,
+    mouse_button_up = c.SDL_EVENT_MOUSE_BUTTON_UP,
+    mouse_wheel = c.SDL_EVENT_MOUSE_WHEEL,
+    joy_axis_motion = c.SDL_EVENT_GAMEPAD_AXIS_MOTION,
+    joy_ball_motion = c.SDL_EVENT_GAMEPAD_BUTTON_DOWN,
+    joy_hat_motion = c.SDL_EVENT_GAMEPAD_BUTTON_UP,
+    joy_button_down = c.SDL_EVENT_GAMEPAD_ADDED,
+    joy_button_up = c.SDL_EVENT_GAMEPAD_REMOVED,
+    joy_device_added = c.SDL_EVENT_GAMEPAD_REMAPPED,
+    joy_device_removed = c.SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN,
+    controller_axis_motion = c.SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION,
+    controller_button_down = c.SDL_EVENT_GAMEPAD_TOUCHPAD_UP,
+    controller_button_up = c.SDL_EVENT_GAMEPAD_SENSOR_UPDATE,
+    controller_device_added = c.SDL_EVENT_GAMEPAD_UPDATE_COMPLETE,
+    controller_device_removed = c.SDL_EVENT_FINGER_DOWN,
+    controller_device_remapped = c.SDL_EVENT_FINGER_UP,
+    finger_down = c.SDL_EVENT_FINGER_MOTION,
+    finger_up = c.SDL_EVENT_MULTIGESTURE,
+    finger_motion = c.SDL_EVENT_DOLLAR_GESTURE,
+    dollar_gesture = c.SDL_EVENT_DOLLAR_RECORD,
+    dollar_record = c.SDL_EVENT_DROP_FILE,
+    drop_file = c.SDL_EVENT_DROP_TEXT,
+    drop_text = c.SDL_EVENT_DROP_BEGIN,
+    drop_begin = c.SDL_EVENT_DROP_COMPLETE,
+    drop_complete = c.SDL_EVENT_AUDIO_DEVICE_ADDED,
+    audio_device_added = c.SDL_EVENT_AUDIO_DEVICE_REMOVED,
+    audio_device_removed = c.SDL_EVENT_SENSOR_UPDATE,
+    render_targets_reset = c.SDL_EVENT_RENDER_TARGETS_RESET,
+    render_device_reset = c.SDL_EVENT_RENDER_DEVICE_RESET,
+    poll_sentinel = c.SDL_EVENT_POLL_SENTINEL,
+    user = c.SDL_EVENT_USER,
+    last = c.SDL_EVENT_LAST,
 };
 
 pub const Event = union(EventType) {
@@ -384,12 +433,78 @@ pub const WindowEventType = enum(u32) {
 };
 
 /// Poll for currently pending events
-pub fn pollEvent() ?Event {
-    var sdl_event: c.SDL_Event = undefined;
-    if (c.SDL_PollEvent(&sdl_event) > 0) {
-        return Event.from(sdl_event);
+pub fn pollEvent() ?c.SDL_Event {
+    var event: c.SDL_Event = undefined;
+    return if (c.SDL_PollEvent(&event) != 0) event else null;
+}
+
+/// Wait indefinitely for the next available event
+pub fn waitEvent() ?c.SDL_Event {
+    var event: c.SDL_Event = undefined;
+    return if (c.SDL_WaitEvent(&event) != 0) event else null;
+}
+
+/// Wait until the specified timeout (in milliseconds) for the next available event
+pub fn waitEventTimeout(timeout: i32) ?c.SDL_Event {
+    var event: c.SDL_Event = undefined;
+    return if (c.SDL_WaitEventTimeout(&event, timeout) != 0) event else null;
+}
+
+/// Push an event onto the event queue
+pub fn pushEvent(event: *c.SDL_Event) bool {
+    return c.SDL_PushEvent(event) > 0;
+}
+
+/// Clear events of a particular type from the event queue
+pub fn flushEvent(event_type: EventType) void {
+    c.SDL_FlushEvent(@intFromEnum(event_type));
+}
+
+/// Clear a range of events from the event queue
+pub fn flushEvents(min_type: EventType, max_type: EventType) void {
+    c.SDL_FlushEvents(@intFromEnum(min_type), @intFromEnum(max_type));
+}
+
+/// Check if an event type is in the event queue
+pub fn hasEvent(event_type: EventType) bool {
+    return c.SDL_HasEvent(@intFromEnum(event_type)) != 0;
+}
+
+/// Check if any events in a range are in the event queue
+pub fn hasEvents(min_type: EventType, max_type: EventType) bool {
+    return c.SDL_HasEvents(@intFromEnum(min_type), @intFromEnum(max_type)) != 0;
+}
+
+test "event basics" {
+    const testing = std.testing;
+
+    // Test event polling (should be empty)
+    try testing.expect(pollEvent() == null);
+
+    // Push a test event
+    var event: c.SDL_Event = undefined;
+    event.type = @intFromEnum(EventType.user);
+    try testing.expect(pushEvent(&event));
+
+    // Poll the event back
+    if (pollEvent()) |received| {
+        try testing.expectEqual(@as(u32, @intFromEnum(EventType.user)), received.type);
+    } else {
+        try testing.expect(false);
     }
-    return null;
+
+    // Test event flushing
+    event.type = @intFromEnum(EventType.user);
+    try testing.expect(pushEvent(&event));
+    flushEvent(.user);
+    try testing.expect(!hasEvent(.user));
+
+    // Test event range operations
+    event.type = @intFromEnum(EventType.key_down);
+    try testing.expect(pushEvent(&event));
+    try testing.expect(hasEvents(.first_event, .last));
+    flushEvents(.first_event, .last);
+    try testing.expect(!hasEvents(.first_event, .last));
 }
 
 test "event handling" {

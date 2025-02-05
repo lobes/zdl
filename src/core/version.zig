@@ -16,7 +16,7 @@
 //! ```
 
 const std = @import("std");
-const root = @import("../root.zig");
+const root = @import("../../zdl.zig");
 const c = root.c;
 
 /// Get the version of SDL that is linked against your program

@@ -7,30 +7,25 @@ const MIN_SDL_VERSION = .{
 };
 
 pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const target = b.standardTargetOptions(.{});
 
-    const default_include_path = switch (target.result.os.tag) {
-        .macos => "/opt/homebrew/include",
-        else => "/usr/local/include",
-    };
+    const test_step = b.step("test", "Run all tests in all modes.");
+    const tests = b.addTest(.{
+        .root_source_file = b.path("zdl.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const run_tests = b.addRunArtifact(tests);
+    test_step.dependOn(&run_tests.step);
 
-    const default_lib_path = switch (target.result.os.tag) {
-        .macos => "/opt/homebrew/lib",
-        else => "/usr/local/lib",
-    };
-
-    const sdl_include_path = b.option(
-        []const u8,
-        "sdl-include-path",
-        "Path to SDL include directory",
-    ) orelse default_include_path;
-
-    const sdl_lib_path = b.option(
-        []const u8,
-        "sdl-lib-path",
-        "Path to SDL library directory",
-    ) orelse default_lib_path;
+    const docs_step = b.step("docs", "Generate docs.");
+    const install_docs = b.addInstallDirectory(.{
+        .source_dir = tests.getEmittedDocs(),
+        .install_dir = .prefix,
+        .install_subdir = "docs",
+    });
+    docs_step.dependOn(&install_docs.step);
 
     // Options following project structure
     const enable_ttf = b.option(bool, "ttf", "Enable TTF font support") orelse false;
@@ -70,8 +65,8 @@ pub fn build(b: *std.Build) void {
     });
     lib.step.dependOn(&check_sdl_version.step);
 
-    lib.addIncludePath(.{ .cwd_relative = sdl_include_path });
-    lib.addLibraryPath(.{ .cwd_relative = sdl_lib_path });
+    lib.addIncludePath(.{ .cwd_relative = "/usr/local/include" });
+    lib.addLibraryPath(.{ .cwd_relative = "/usr/local/lib" });
 
     lib.linkSystemLibrary("SDL3");
     if (enable_ttf) lib.linkSystemLibrary("SDL3_ttf");
@@ -90,18 +85,13 @@ pub fn build(b: *std.Build) void {
     // Add build options to tests
     main_tests.root_module.addImport("build_options", options.createModule());
 
-    main_tests.addIncludePath(.{ .cwd_relative = sdl_include_path });
-    main_tests.addLibraryPath(.{ .cwd_relative = sdl_lib_path });
+    main_tests.addIncludePath(.{ .cwd_relative = "/usr/local/include" });
+    main_tests.addLibraryPath(.{ .cwd_relative = "/usr/local/lib" });
 
     main_tests.linkSystemLibrary("SDL3");
     if (enable_ttf) main_tests.linkSystemLibrary("SDL3_ttf");
     if (enable_mixer) main_tests.linkSystemLibrary("SDL3_mixer");
     main_tests.linkLibC();
-
-    const run_main_tests = b.addRunArtifact(main_tests);
-
-    const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&run_main_tests.step);
 
     // Examples
     const examples_step = b.step("examples", "Build examples");
@@ -115,8 +105,8 @@ pub fn build(b: *std.Build) void {
     });
 
     loldongs.root_module.addImport("zdl", zdl_module);
-    loldongs.addIncludePath(.{ .cwd_relative = sdl_include_path });
-    loldongs.addLibraryPath(.{ .cwd_relative = sdl_lib_path });
+    loldongs.addIncludePath(.{ .cwd_relative = "/usr/local/include" });
+    loldongs.addLibraryPath(.{ .cwd_relative = "/usr/local/lib" });
     loldongs.linkSystemLibrary("SDL3");
     if (enable_ttf) loldongs.linkSystemLibrary("SDL3_ttf");
     if (enable_mixer) loldongs.linkSystemLibrary("SDL3_mixer");

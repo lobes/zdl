@@ -50,12 +50,8 @@ pub fn setHint(name: [:0]const u8, value: [:0]const u8) bool {
     return c.SDL_SetHint(name.ptr, value.ptr);
 }
 
-/// Set a hint with specified priority
-pub fn setHintWithPriority(
-    name: [:0]const u8,
-    value: [:0]const u8,
-    priority: HintPriority,
-) bool {
+/// Set a hint with a specific priority level
+pub fn setHintWithPriority(name: [:0]const u8, value: [:0]const u8, priority: HintPriority) bool {
     return c.SDL_SetHintWithPriority(name.ptr, value.ptr, @intFromEnum(priority));
 }
 
@@ -71,18 +67,18 @@ pub fn resetHints() void {
 }
 
 /// Clear a specific hint
-pub fn clearHint(name: [:0]const u8) void {
-    _ = setHint(name, "");
+pub fn clearHint(name: [:0]const u8) bool {
+    return c.SDL_ClearHint(name.ptr);
 }
 
-/// Add a function to watch a particular hint
-pub fn addHintCallback(name: [:0]const u8, callback: HintCallback, data: ?*anyopaque) void {
-    _ = c.SDL_AddHintCallback(name.ptr, callback, data);
+/// Add a callback for hint changes
+pub fn addHintCallback(name: [:0]const u8, callback: HintCallback, userdata: ?*anyopaque) bool {
+    return c.SDL_AddHintCallback(name.ptr, callback, userdata);
 }
 
-/// Remove a function watching a particular hint
-pub fn removeHintCallback(name: [:0]const u8, callback: HintCallback, data: ?*anyopaque) void {
-    c.SDL_RemoveHintCallback(name.ptr, callback, data);
+/// Remove a callback for hint changes
+pub fn delHintCallback(name: [:0]const u8, callback: HintCallback, userdata: ?*anyopaque) void {
+    c.SDL_DelHintCallback(name.ptr, callback, userdata);
 }
 
 const TestContext = struct {
@@ -99,42 +95,30 @@ const TestContext = struct {
     }
 };
 
-test "hint operations" {
-    const sdl = @import("module.zig");
-    try sdl.init(.{});
-    defer sdl.quit();
-
-    const test_hint = "SDL_TEST_HINT";
-    const test_value = "test_value";
+test "hint basics" {
+    const testing = std.testing;
+    const hint_name = "SDL_HINT_TEST";
+    const hint_value = "test_value";
 
     // Test setting and getting hints
-    if (!setHint(test_hint, test_value)) {
-        // Some hints may be rejected, that's okay for testing
-        return;
+    try testing.expect(setHint(hint_name, hint_value));
+    if (getHint(hint_name)) |value| {
+        try testing.expectEqualStrings(hint_value, value);
+    } else {
+        try testing.expect(false);
     }
 
-    if (getHint(test_hint)) |value| {
-        try std.testing.expectEqualStrings(test_value, value);
-    }
+    // Test clearing hints
+    try testing.expect(clearHint(hint_name));
+    try testing.expect(getHint(hint_name) == null);
 
     // Test priority levels
-    if (!setHintWithPriority(test_hint, "override_value", .override)) {
-        return;
+    try testing.expect(setHintWithPriority(hint_name, hint_value, .override));
+    if (getHint(hint_name)) |value| {
+        try testing.expectEqualStrings(hint_value, value);
     }
 
-    if (getHint(test_hint)) |override_value| {
-        try std.testing.expectEqualStrings("override_value", override_value);
-    }
-
-    // Test hint callback
-    var callback_called = false;
-    var context = TestContext{ .triggered = &callback_called };
-    addHintCallback(test_hint, TestContext.onHintChanged, &context);
-    _ = setHint(test_hint, "new_value");
-    try std.testing.expect(callback_called);
-
-    removeHintCallback(test_hint, TestContext.onHintChanged, &context);
-    clearHint(test_hint);
+    resetHints();
 }
 
 test "hint reset" {

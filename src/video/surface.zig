@@ -1,7 +1,7 @@
 const std = @import("std");
-const root = @import("../root.zig");
-const c = root.c;
-const init = root.init;
+const zdl = @import("../../zdl.zig");
+const c = zdl.c;
+const init = zdl.init;
 const PixelFormat = @import("pixels.zig").PixelFormat;
 
 const testing = std.testing;
@@ -14,16 +14,18 @@ pub const Surface = struct {
     handle: *c.SDL_Surface,
 
     /// Create a new surface
-    pub fn create(width: c_int, height: c_int, format: c_uint) !Surface {
-        const handle = c.SDL_CreateSurface(width, height, format) orelse {
-            return error.SDLError;
-        };
+    pub fn create(width: u32, height: u32, format: u32) !Surface {
+        const handle = c.SDL_CreateSurface(
+            @intCast(width),
+            @intCast(height),
+            format,
+        ) orelse return error.TextureCreationFailed;
         return Surface{ .handle = handle };
     }
 
     /// Load a surface from a file
     pub fn loadBMP(path: [:0]const u8) !Surface {
-        const handle = c.SDL_LoadBMP(path) orelse return error.SDLError;
+        const handle = c.SDL_LoadBMP(path) orelse return error.FileNotFound;
         return Surface{ .handle = handle };
     }
 
@@ -33,24 +35,24 @@ pub const Surface = struct {
     }
 
     /// Get the surface's width
-    pub fn getWidth(self: Surface) c_int {
+    pub fn getWidth(self: Surface) i32 {
         return self.handle.w;
     }
 
     /// Get the surface's height
-    pub fn getHeight(self: Surface) c_int {
+    pub fn getHeight(self: Surface) i32 {
         return self.handle.h;
     }
 
     /// Get the surface's pixel format
-    pub fn getFormat(self: Surface) c_uint {
+    pub fn getFormat(self: Surface) u32 {
         return @intCast(self.handle.format);
     }
 
     /// Lock a surface for direct access
     pub fn lock(self: Surface) !void {
-        if (c.SDL_LockSurface(self.handle) == false) {
-            return error.SDLError;
+        if (!c.SDL_LockSurface(self.handle)) {
+            return error.InvalidTexture;
         }
     }
 
@@ -60,59 +62,41 @@ pub const Surface = struct {
     }
 
     /// Fill the surface with a color
-    pub fn fill(self: Surface, color: pixel_mod.Color) !void {
-        const format = c.SDL_GetPixelFormatDetails(self.handle.format) orelse return error.SDLError;
-        const pixel = c.SDL_MapRGBA(
-            format,
-            null, // palette (null for RGB/RGBA formats)
-            color.r,
-            color.g,
-            color.b,
-            color.a,
-        );
-        if (c.SDL_FillSurfaceRect(self.handle, null, pixel) == false) {
-            return error.SDLError;
+    pub fn fill(self: Surface, color: zdl.pixels.Color) !void {
+        if (!c.SDL_FillSurfaceRect(self.handle, null, color.toSDL())) {
+            return error.InvalidTexture;
         }
     }
 
     /// Fill a rectangle in the surface with a color
-    pub fn fillRect(self: Surface, rect_: rect.Rect, color: pixel_mod.Color) !void {
-        const sdl_rect = rect_.toSDL();
-        const format = c.SDL_GetPixelFormatDetails(self.handle.format) orelse return error.SDLError;
-        const pixel = c.SDL_MapRGBA(
-            format,
-            null, // palette (null for RGB/RGBA formats)
-            color.r,
-            color.g,
-            color.b,
-            color.a,
-        );
-        if (c.SDL_FillSurfaceRect(self.handle, &sdl_rect, pixel) == false) {
-            return error.SDLError;
+    pub fn fillRect(self: Surface, rect_area: zdl.rect.Rect, color: zdl.pixels.Color) !void {
+        const sdl_rect = rect_area.toSDL();
+        if (!c.SDL_FillSurfaceRect(self.handle, &sdl_rect, color.toSDL())) {
+            return error.InvalidTexture;
         }
     }
 
     /// Blit (copy) another surface onto this one
-    pub fn blit(self: Surface, source: Surface, dst_rect: ?rect.Rect) !void {
-        const sdl_rect = if (dst_rect) |r| r.toSDL() else null;
-        if (c.SDL_BlitSurface(source.handle, null, self.handle, if (sdl_rect) |*r| r else null) == false) {
-            return error.SDLError;
+    pub fn blit(self: Surface, src: Surface, dst_rect: zdl.rect.Rect) !void {
+        const sdl_rect = dst_rect.toSDL();
+        if (!c.SDL_BlitSurface(src.handle, null, self.handle, &sdl_rect)) {
+            return error.InvalidTexture;
         }
     }
 
     /// Blit (copy) a portion of another surface onto this one
-    pub fn blitRect(self: Surface, source: Surface, src_rect: rect.Rect, dst_rect: rect.Rect) !void {
+    pub fn blitRect(self: Surface, source: Surface, src_rect: zdl.rect.Rect, dst_rect: zdl.rect.Rect) !void {
         const sdl_src_rect = src_rect.toSDL();
         const sdl_dst_rect = dst_rect.toSDL();
-        if (c.SDL_BlitSurface(source.handle, &sdl_src_rect, self.handle, &sdl_dst_rect) == false) {
-            return error.SDLError;
+        if (!c.SDL_BlitSurface(source.handle, &sdl_src_rect, self.handle, &sdl_dst_rect)) {
+            return error.InvalidTexture;
         }
     }
 
     /// Save the surface to a BMP file
-    pub fn saveBMP(self: Surface, path: [:0]const u8) !void {
-        if (c.SDL_SaveBMP(self.handle, path) == false) {
-            return error.SDLError;
+    pub fn saveBMP(self: Surface, file: [:0]const u8) !void {
+        if (!c.SDL_SaveBMP(self.handle, file.ptr)) {
+            return error.FileIOError;
         }
     }
 
@@ -122,40 +106,32 @@ pub const Surface = struct {
     }
 
     /// Set the color key (transparent pixel value)
-    pub fn setColorKey(self: Surface, color: pixel_mod.Color) !void {
-        const format = c.SDL_GetPixelFormatDetails(self.handle.format) orelse return error.SDLError;
-        const key = c.SDL_MapRGBA(
-            format,
-            null, // palette (null for RGB/RGBA formats)
-            color.r,
-            color.g,
-            color.b,
-            color.a,
-        );
-        if (c.SDL_SetSurfaceColorKey(self.handle, 1, key) == false) {
-            return error.SDLError;
+    pub fn setColorKey(self: Surface, color: zdl.pixels.Color) !void {
+        const format = c.SDL_GetPixelFormatDetails(self.handle.format) orelse return error.InvalidTexture;
+        const key = c.SDL_MapRGBA(format, color.r, color.g, color.b, color.a);
+        if (!c.SDL_SetSurfaceColorKey(self.handle, 1, key)) {
+            return error.InvalidTexture;
         }
     }
 
     /// Set the alpha modulation
     pub fn setAlphaMod(self: Surface, alpha: u8) !void {
-        if (c.SDL_SetSurfaceAlphaMod(self.handle, alpha) == false) {
-            return error.SDLError;
+        if (!c.SDL_SetSurfaceAlphaMod(self.handle, alpha)) {
+            return error.InvalidTexture;
         }
     }
 
     /// Set the color modulation
-    pub fn setColorMod(self: Surface, color: pixel_mod.Color) !void {
-        if (c.SDL_SetSurfaceColorMod(self.handle, color.r, color.g, color.b) == false) {
-            return error.SDLError;
+    pub fn setColorMod(self: Surface, color: zdl.pixels.Color) !void {
+        if (!c.SDL_SetSurfaceColorMod(self.handle, color.r, color.g, color.b)) {
+            return error.InvalidTexture;
         }
     }
 };
 
 test "surface operations" {
-    const sdl = @import("../core/module.zig");
-    try sdl.init(.{ .video = true });
-    defer sdl.quit();
+    try zdl.init(.{ .video = true });
+    defer zdl.quit();
 
     var surface = try Surface.create(
         800,
@@ -167,17 +143,17 @@ test "surface operations" {
     try surface.lock();
     defer surface.unlock();
 
-    try std.testing.expectEqual(@as(c_int, 800), surface.getWidth());
-    try std.testing.expectEqual(@as(c_int, 600), surface.getHeight());
-    try std.testing.expectEqual(@as(c_uint, c.SDL_PIXELFORMAT_RGBA32), surface.getFormat());
+    try std.testing.expectEqual(@as(i32, 800), surface.getWidth());
+    try std.testing.expectEqual(@as(i32, 600), surface.getHeight());
+    try std.testing.expectEqual(@as(u32, c.SDL_PIXELFORMAT_RGBA32), surface.getFormat());
 }
 
 test "surface format" {
-    try init(.{ .video = true });
-    defer root.quit();
+    try zdl.init(.{ .video = true });
+    defer zdl.quit();
 
     var surface = try Surface.create(100, 100, c.SDL_PIXELFORMAT_RGBA32);
     defer surface.destroy();
 
-    try std.testing.expectEqual(@as(c_uint, c.SDL_PIXELFORMAT_RGBA32), surface.getFormat());
+    try std.testing.expectEqual(@as(u32, c.SDL_PIXELFORMAT_RGBA32), surface.getFormat());
 }
