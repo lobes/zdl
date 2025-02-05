@@ -7,12 +7,12 @@ const MIN_SDL_VERSION = .{
 };
 
 pub fn build(b: *std.Build) void {
-    const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
 
     const test_step = b.step("test", "Run all tests in all modes.");
     const tests = b.addTest(.{
-        .root_source_file = b.path("zdl.zig"),
+        .root_source_file = .{ .cwd_relative = "zdl.zig" },
         .target = target,
         .optimize = optimize,
     });
@@ -67,6 +67,8 @@ pub fn build(b: *std.Build) void {
 
     lib.addIncludePath(.{ .cwd_relative = "/usr/local/include" });
     lib.addLibraryPath(.{ .cwd_relative = "/usr/local/lib" });
+    lib.addIncludePath(.{ .cwd_relative = "/opt/homebrew/include" });
+    lib.addLibraryPath(.{ .cwd_relative = "/opt/homebrew/lib" });
 
     lib.linkSystemLibrary("SDL3");
     if (enable_ttf) lib.linkSystemLibrary("SDL3_ttf");
