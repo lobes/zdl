@@ -51,6 +51,9 @@ pub fn build(b: *std.Build) void {
         },
     });
 
+    // Export the module
+    b.modules.put("zdl", zdl_module) catch unreachable;
+
     const lib = b.addStaticLibrary(.{
         .name = "zdl",
         .root_source_file = .{ .cwd_relative = "zdl.zig" },
